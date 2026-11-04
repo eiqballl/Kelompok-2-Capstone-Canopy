@@ -735,10 +735,10 @@
                         </Property>
                         <Property name="text" type="java.lang.String" value="2026-10-01"/>
                       </Properties>
-                    
                       <AuxValues>
                         <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new DateTextField()"/>
-                      </AuxValues></Component>
+                      </AuxValues>
+                    </Component>
                     <Component class="javax.swing.JLabel" name="lblTglAkhir">
                       <Properties>
                         <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
@@ -754,15 +754,12 @@
                         </Property>
                         <Property name="text" type="java.lang.String" value="2026-10-31"/>
                       </Properties>
-                    
                       <AuxValues>
                         <AuxValue name="JavaCodeGenerator_CreateCodeCustom" type="java.lang.String" value="new DateTextField()"/>
-                      </AuxValues></Component>
-                                        <Component class="javax.swing.JButton" name="btnPilihBlok">
+                      </AuxValues>
+                    </Component>
+                    <Component class="javax.swing.JButton" name="btnPilihBlok">
                       <Properties>
-                        <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
-                          <Font name="Segoe UI" size="12" style="0"/>
-                        </Property>
                         <Property name="text" type="java.lang.String" value="Pilih Blok Lahan (Semua)"/>
                       </Properties>
                       <Events>
@@ -962,7 +959,7 @@
                 <Property name="text" type="java.lang.String" value="Daftar Riwayat Rekam Evaluasi Hasil Panen:"/>
               </Properties>
             </Component>
-                        <Component class="javax.swing.JButton" name="btnLaporEval">
+            <Component class="javax.swing.JButton" name="btnLaporEval">
               <Properties>
                 <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
                   <Color blue="4a" green="a3" red="16" type="rgb"/>

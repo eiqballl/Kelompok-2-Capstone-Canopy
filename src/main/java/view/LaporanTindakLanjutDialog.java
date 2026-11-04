@@ -21,9 +21,6 @@ import javax.swing.JTextArea;
 import model.DataStore;
 import model.Evaluasi;
 
-/**
- * Dialog bagi Petugas Lapangan untuk mengirimkan laporan tindak lanjut pelaksanaan evaluasi panen.
- */
 public class LaporanTindakLanjutDialog extends JDialog {
 
     private final Evaluasi evaluasi;
@@ -72,13 +69,11 @@ public class LaporanTindakLanjutDialog extends JDialog {
         pnlHeader.add(pnlTitleBox, BorderLayout.CENTER);
         add(pnlHeader, BorderLayout.NORTH);
 
-        // Body Form
         JPanel pnlBody = new JPanel();
         pnlBody.setLayout(new BoxLayout(pnlBody, BoxLayout.Y_AXIS));
         pnlBody.setBackground(Color.WHITE);
         pnlBody.setBorder(BorderFactory.createEmptyBorder(14, 18, 14, 18));
 
-        // Info box ringkasan evaluasi
         JPanel pnlInfo = new JPanel(new BorderLayout(6, 6));
         pnlInfo.setBackground(new Color(241, 245, 249));
         pnlInfo.setBorder(BorderFactory.createCompoundBorder(
@@ -105,7 +100,6 @@ public class LaporanTindakLanjutDialog extends JDialog {
         pnlBody.add(pnlInfo);
         pnlBody.add(Box.createVerticalStrut(12));
 
-        // Catatan Tindak Lanjut Lapangan
         JLabel lblCatatan = new JLabel("Laporan Hasil Tindak Lanjut Lapangan (Catatan Pegawai):");
         lblCatatan.setFont(new Font("Segoe UI", Font.BOLD, 12));
         lblCatatan.setForeground(new Color(30, 41, 59));
@@ -123,7 +117,6 @@ public class LaporanTindakLanjutDialog extends JDialog {
         pnlBody.add(scrollCatatan);
         pnlBody.add(Box.createVerticalStrut(12));
 
-        // Status Tindak Lanjut
         JLabel lblStatus = new JLabel("Status Pelaksanaan Evaluasi:");
         lblStatus.setFont(new Font("Segoe UI", Font.BOLD, 12));
         lblStatus.setForeground(new Color(30, 41, 59));
@@ -138,7 +131,6 @@ public class LaporanTindakLanjutDialog extends JDialog {
 
         add(pnlBody, BorderLayout.CENTER);
 
-        // Footer buttons
         JPanel pnlFooter = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 12));
         pnlFooter.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(226, 232, 240)));
 

@@ -81,25 +81,14 @@ public class Panen implements KalkulasiPanen {
         return "Kurang";
     }
 
-    /**
-     * Helper kalkulasi total panen sawit dari berat tandan dan brondolan dalam kilogram (Kg).
-     * Sesuai kolom database: jumlah_berat_tandan + jumlah_berat_brondolan.
-     */
     public static double hitungTotalSawit(double beratTandanKg, double beratBrondolanKg) {
         return beratTandanKg + beratBrondolanKg;
     }
 
-    /**
-     * Method Overloading helper: menghitung total panen sawit bila diketahui jumlah janjang dan BJR.
-     */
     public static double hitungTotalSawit(int jumlahJanjang, double bjrKg, double beratBrondolanKg) {
         return (jumlahJanjang * bjrKg) + beratBrondolanKg;
     }
 
-    /**
-     * Helper kalkulasi berat bersih karet berdasarkan kadar karet kering (KKK).
-     * KKK = 100% - Kadar Air%.
-     */
     public static double hitungKaretBersih(double beratKotorKg, double kadarAirPersen) {
         double kkk = Math.max(0.0, 100.0 - kadarAirPersen);
         return beratKotorKg * (kkk / 100.0);

@@ -389,10 +389,9 @@ public class PetugasFrame extends javax.swing.JFrame {
         txtInput2.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
 
         lblTidakLayak.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        lblTidakLayak.setText("<html>Hasil Panen Tidak Layak (Kg): <font color='#64748b'>(Baik &le;5%, Cukup 5.1-10%, Kurang &gt;10%)</font></html>");
+        lblTidakLayak.setText("Hasil Panen Tidak Layak (Kg):");
 
         txtTidakLayak.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
-        txtTidakLayak.setToolTipText("Standar Mutu: Baik (<=5%), Cukup (5.1-10%), Kurang (>10%)");
 
         lblTanggal.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblTanggal.setText("Tanggal Panen (YYYY-MM-DD):");
@@ -611,7 +610,6 @@ public class PetugasFrame extends javax.swing.JFrame {
         txtTglAkhir.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         txtTglAkhir.setText("2026-10-31");
 
-                btnPilihBlok.setFont(new java.awt.Font("Segoe UI", 0, 12)); // NOI18N
         btnPilihBlok.setText("Pilih Blok Lahan (Semua)");
         btnPilihBlok.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -773,7 +771,7 @@ public class PetugasFrame extends javax.swing.JFrame {
         lblDaftarEval.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         lblDaftarEval.setText("Daftar Riwayat Rekam Evaluasi Hasil Panen:");
 
-                btnLaporEval.setBackground(new java.awt.Color(22, 163, 74));
+        btnLaporEval.setBackground(new java.awt.Color(22, 163, 74));
         btnLaporEval.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
         btnLaporEval.setForeground(new java.awt.Color(255, 255, 255));
         btnLaporEval.setText("Lapor Tindak Lanjut");
@@ -1079,14 +1077,14 @@ public class PetugasFrame extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.ButtonGroup btnGroupKomoditas;
     private javax.swing.JButton btnHapus;
+    private javax.swing.JButton btnLaporEval;
     private javax.swing.JButton btnLogout;
     private javax.swing.JButton btnPerbarui;
-    private javax.swing.JButton btnLaporEval;
+    private javax.swing.JButton btnPilihBlok;
     private javax.swing.JButton btnRefreshEval;
     private javax.swing.JButton btnReset;
     private javax.swing.JButton btnResetRekap;
     private javax.swing.JButton btnSimpan;
-    private javax.swing.JButton btnPilihBlok;
     private javax.swing.JButton btnTampilkanRekap;
     private javax.swing.JComboBox<String> cmbBlokLahan;
     private javax.swing.JComboBox<String> cmbFilterBlok;

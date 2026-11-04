@@ -99,11 +99,12 @@ public class DataStore {
                 return;
             }
             offlineMode = false;
-            blokList.clear();
-            pegawaiList.clear();
-            panenList.clear();
-            evaluasiList.clear();
-            riwayatList.clear();
+
+            List<BlokLahan> tempBlok = new ArrayList<>();
+            List<Pegawai> tempPegawai = new ArrayList<>();
+            List<Panen> tempPanen = new ArrayList<>();
+            List<Evaluasi> tempEvaluasi = new ArrayList<>();
+            List<Riwayat> tempRiwayat = new ArrayList<>();
 
             ensureBlokLahanTahunTanam(c);
             Statement st = c.createStatement();
@@ -119,7 +120,7 @@ public class DataStore {
                     thn = rsBlok.getString("tahun_tanam");
                     if (thn == null || thn.trim().isEmpty()) thn = "2018";
                 } catch (Exception ignored) {}
-                blokList.add(new BlokLahan(kode, nama, luas, kom, thn));
+                tempBlok.add(new BlokLahan(kode, nama, luas, kom, thn));
             }
             rsBlok.close();
 
@@ -135,7 +136,7 @@ public class DataStore {
                 "LEFT JOIN petugas p ON u.id_user = p.id_user"
             );
             while (rsUser.next()) {
-                pegawaiList.add(new Pegawai(
+                tempPegawai.add(new Pegawai(
                     rsUser.getString("id_user"),
                     rsUser.getString("nama"),
                     rsUser.getString("username"),
@@ -176,7 +177,7 @@ public class DataStore {
                 double tot = rsPanen.getDouble("total_jumlah_panen");
                 double rej = rsPanen.getDouble("hasil_panen_tidak_layak");
                 String qual = rsPanen.getString("kualitas_panen");
-                panenList.add(new Panen(idP, tgl, blokStr, kom, in1, in2, tot, rej, qual));
+                tempPanen.add(new Panen(idP, tgl, blokStr, kom, in1, in2, tot, rej, qual));
                 try {
                     int num = Integer.parseInt(idP.replaceAll("\\D+", ""));
                     if (num >= panenCounter) panenCounter = num + 1;
@@ -201,7 +202,7 @@ public class DataStore {
                 String cPegawai = rsEval.getString("catatan_tindak_lanjut");
                 String cDireksi = rsEval.getString("catatan_evaluasi");
                 double[] metrics = calculateMetrics(tglAwal, tglAkhir);
-                evaluasiList.add(new Evaluasi(idEv, tglAwal, tglAkhir, metrics[0], metrics[1], status, cDireksi, cPegawai));
+                tempEvaluasi.add(new Evaluasi(idEv, tglAwal, tglAkhir, metrics[0], metrics[1], status, cDireksi, cPegawai));
                 try {
                     int num = Integer.parseInt(idEv.replaceAll("\\D+", ""));
                     if (num >= evalCounter) evalCounter = num + 1;
@@ -213,14 +214,9 @@ public class DataStore {
                 ResultSet rsHistory = st.executeQuery(
                     "SELECT id_riwayat, waktu_perubahan, jenis_tindakan, id_user, id_panen, data_sebelum, data_setelah FROM riwayat_perubahan ORDER BY waktu_perubahan DESC, id_riwayat DESC"
                 );
-                boolean hasHistory = false;
                 while (rsHistory.next()) {
-                    if (!hasHistory) {
-                        riwayatList.clear();
-                        hasHistory = true;
-                    }
                     String id = rsHistory.getString("id_riwayat");
-                    riwayatList.add(new Riwayat(id, rsHistory.getString("waktu_perubahan"),
+                    tempRiwayat.add(new Riwayat(id, rsHistory.getString("waktu_perubahan"),
                             rsHistory.getString("jenis_tindakan"), rsHistory.getString("id_user"),
                             rsHistory.getString("id_panen"), rsHistory.getString("data_sebelum"),
                             rsHistory.getString("data_setelah")));
@@ -231,7 +227,30 @@ public class DataStore {
                 }
                 rsHistory.close();
             } catch (Exception ignored) {}
+
             st.close();
+
+            if (!tempBlok.isEmpty()) {
+                blokList.clear();
+                blokList.addAll(tempBlok);
+            }
+            if (!tempPegawai.isEmpty()) {
+                pegawaiList.clear();
+                pegawaiList.addAll(tempPegawai);
+            }
+            if (!tempPanen.isEmpty()) {
+                panenList.clear();
+                panenList.addAll(tempPanen);
+            }
+            if (!tempEvaluasi.isEmpty()) {
+                evaluasiList.clear();
+                evaluasiList.addAll(tempEvaluasi);
+            }
+            if (!tempRiwayat.isEmpty()) {
+                riwayatList.clear();
+                riwayatList.addAll(tempRiwayat);
+            }
+
         } catch (Exception e) {
             System.err.println("Gagal memuat database canopy: " + e.getMessage());
         }

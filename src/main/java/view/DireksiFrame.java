@@ -54,6 +54,7 @@ public class DireksiFrame extends javax.swing.JFrame {
 
         tblRekap.setAutoCreateRowSorter(true);
         tblEvaluasi.setAutoCreateRowSorter(true);
+        cmbStatusEval.setModel(new javax.swing.DefaultComboBoxModel<>(new String[]{"Proses", "Selesai"}));
 
         javax.swing.event.DocumentListener evalListener = new javax.swing.event.DocumentListener() {
             public void insertUpdate(javax.swing.event.DocumentEvent e) { autoUpdateMetrikPeriode(); }
@@ -274,7 +275,6 @@ public class DireksiFrame extends javax.swing.JFrame {
         txtTglAkhir.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         txtTglAkhir.setText("2026-10-31");
 
-                btnPilihBlok.setFont(new java.awt.Font("Segoe UI", 0, 12)); // NOI18N
         btnPilihBlok.setText("Pilih Blok Lahan (Semua)");
         btnPilihBlok.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -514,10 +514,9 @@ public class DireksiFrame extends javax.swing.JFrame {
         );
 
         lblStatusEval.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        lblStatusEval.setText("Status Evaluasi (Opsional):");
+        lblStatusEval.setText("Status Evaluasi :");
 
         cmbStatusEval.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
-        cmbStatusEval.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Proses", "Selesai" }));
 
         lblCatatan.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblCatatan.setText("Catatan & Arahan Direksi (Opsional):");
@@ -577,7 +576,7 @@ public class DireksiFrame extends javax.swing.JFrame {
                 .addGroup(pnlFormEvalLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(btnHitungMetrik, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(pnlMetrikCard, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(cmbStatusEval)
+                    .addComponent(cmbStatusEval, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(scrollCatatan)
                     .addGroup(pnlFormEvalLayout.createSequentialGroup()
                         .addGroup(pnlFormEvalLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -957,21 +956,22 @@ public class DireksiFrame extends javax.swing.JFrame {
     private javax.swing.JButton btnHitungMetrik;
     private javax.swing.JButton btnLogout;
     private javax.swing.JButton btnPerbaruiEval;
+    private javax.swing.JButton btnPilihBlok;
     private javax.swing.JButton btnResetEval;
     private javax.swing.JButton btnResetRekap;
     private javax.swing.JButton btnSimpanEval;
-    private javax.swing.JButton btnPilihBlok;
     private javax.swing.JButton btnTampilkanRekap;
     private javax.swing.JComboBox<String> cmbFilterBlok;
     private javax.swing.JComboBox<String> cmbFilterKomoditas;
     private javax.swing.JComboBox<String> cmbModeRekap;
-    private javax.swing.JLabel lblFilterBlok;
+    private javax.swing.JComboBox<String> cmbStatusEval;
     private javax.swing.JLabel lblCatatan;
     private javax.swing.JLabel lblDaftarEval;
     private javax.swing.JLabel lblDaftarRekap;
     private javax.swing.JLabel lblEvalAkhir;
     private javax.swing.JLabel lblEvalAwal;
     private javax.swing.JLabel lblEvalPeriode;
+    private javax.swing.JLabel lblFilterBlok;
     private javax.swing.JLabel lblFilterKomoditas;
     private javax.swing.JLabel lblLogoHeader;
     private javax.swing.JLabel lblModeRekap;
@@ -1003,7 +1003,6 @@ public class DireksiFrame extends javax.swing.JFrame {
     private javax.swing.JTextArea txtCatatanTindakLanjut;
     private javax.swing.JTextField txtEvalAkhir;
     private javax.swing.JTextField txtEvalAwal;
-    private javax.swing.JComboBox<String> cmbStatusEval;
     private javax.swing.JTextField txtTglAkhir;
     private javax.swing.JTextField txtTglAwal;
     // End of variables declaration//GEN-END:variables

@@ -23,9 +23,6 @@ import javax.swing.JScrollPane;
 import model.BlokLahan;
 import model.DataStore;
 
-/**
- * Dialog multi-select untuk memilih satu atau beberapa blok lahan pada rekapitulasi.
- */
 public class PilihBlokDialog extends JDialog {
 
     private final Set<String> selectedCodes = new HashSet<>();
@@ -47,7 +44,6 @@ public class PilihBlokDialog extends JDialog {
         setSize(420, 480);
         setMinimumSize(new Dimension(380, 400));
 
-        // Header panel
         JPanel pnlHeader = new JPanel(new BorderLayout());
         pnlHeader.setBackground(new Color(248, 250, 252));
         pnlHeader.setBorder(BorderFactory.createCompoundBorder(
@@ -73,7 +69,6 @@ public class PilihBlokDialog extends JDialog {
         pnlHeader.add(pnlTitleBox, BorderLayout.CENTER);
         add(pnlHeader, BorderLayout.NORTH);
 
-        // Content panel (list checkboxes)
         JPanel pnlList = new JPanel();
         pnlList.setLayout(new BoxLayout(pnlList, BoxLayout.Y_AXIS));
         pnlList.setBackground(Color.WHITE);
@@ -100,7 +95,6 @@ public class PilihBlokDialog extends JDialog {
         scrollPane.getVerticalScrollBar().setUnitIncrement(12);
         add(scrollPane, BorderLayout.CENTER);
 
-        // Bottom actions
         JPanel pnlBottom = new JPanel(new BorderLayout(8, 8));
         pnlBottom.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(226, 232, 240)),

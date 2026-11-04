@@ -19,10 +19,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import model.Panen;
 
-/**
- * Dialog Rangkuman Eksekutif untuk menyajikan analisis statistik performa panen
- * dan rekomendasi manajerial tanpa perlu menampilkan tabel data mentah.
- */
 public class RangkumanEksekutifDialog extends JDialog {
 
     private final List<Panen> dataset;
@@ -43,7 +39,6 @@ public class RangkumanEksekutifDialog extends JDialog {
         setSize(650, 580);
         setMinimumSize(new Dimension(580, 520));
 
-        // Header
         JPanel pnlHeader = new JPanel(new BorderLayout());
         pnlHeader.setBackground(new Color(248, 250, 252));
         pnlHeader.setBorder(BorderFactory.createCompoundBorder(
@@ -69,7 +64,6 @@ public class RangkumanEksekutifDialog extends JDialog {
         pnlHeader.add(pnlTitleBox, BorderLayout.CENTER);
         add(pnlHeader, BorderLayout.NORTH);
 
-        // Hitung statistik
         double totalPanen = 0;
         double totalReject = 0;
         int count = dataset.size();
@@ -89,13 +83,11 @@ public class RangkumanEksekutifDialog extends JDialog {
         double avgRejectPct = totalPanen > 0 ? (totalReject / totalPanen * 100.0) : 0;
         double avgPerPanen = count > 0 ? (totalPanen / count) : 0;
 
-        // Content
         JPanel pnlContent = new JPanel();
         pnlContent.setLayout(new BoxLayout(pnlContent, BoxLayout.Y_AXIS));
         pnlContent.setBackground(Color.WHITE);
         pnlContent.setBorder(BorderFactory.createEmptyBorder(16, 20, 16, 20));
 
-        // KPI Cards Row
         JPanel pnlKpi = new JPanel(new GridLayout(1, 3, 12, 0));
         pnlKpi.setOpaque(false);
         pnlKpi.setMaximumSize(new Dimension(Short.MAX_VALUE, 90));
@@ -107,7 +99,6 @@ public class RangkumanEksekutifDialog extends JDialog {
         pnlContent.add(pnlKpi);
         pnlContent.add(Box.createVerticalStrut(16));
 
-        // Mutu Breakdown Card
         JPanel pnlBreakdown = new JPanel(new BorderLayout(8, 8));
         pnlBreakdown.setBackground(new Color(248, 250, 252));
         pnlBreakdown.setBorder(BorderFactory.createCompoundBorder(
@@ -135,7 +126,6 @@ public class RangkumanEksekutifDialog extends JDialog {
         pnlContent.add(pnlBreakdown);
         pnlContent.add(Box.createVerticalStrut(16));
 
-        // Analisis & Rekomendasi Manajerial
         JPanel pnlSaran = new JPanel(new BorderLayout(8, 8));
         pnlSaran.setBackground(new Color(254, 252, 232));
         pnlSaran.setBorder(BorderFactory.createCompoundBorder(
@@ -183,7 +173,6 @@ public class RangkumanEksekutifDialog extends JDialog {
         scroll.getVerticalScrollBar().setUnitIncrement(14);
         add(scroll, BorderLayout.CENTER);
 
-        // Footer button
         JPanel pnlFooter = new JPanel(new FlowLayout(FlowLayout.RIGHT, 14, 12));
         pnlFooter.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(226, 232, 240)));
 

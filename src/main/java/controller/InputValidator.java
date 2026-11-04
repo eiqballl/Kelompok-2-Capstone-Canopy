@@ -3,10 +3,6 @@ package controller;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 
-/**
- * Utility validasi input untuk controller dan GUI Form.
- * Mengikuti pola InputValidator pada Minpro-4.
- */
 public class InputValidator {
 
     public static boolean isValidString(String str) {
@@ -81,24 +77,11 @@ public class InputValidator {
         }
     }
 
-    /**
-     * Memvalidasi format kode blok lahan (3-10 karakter alfanumerik, tanda hubung '-', atau garis bawah '_').
-     * Tidak memperbolehkan spasi sembarangan (misal: "SW 01" tidak valid, harus "SW01" atau "SW-01").
-     *
-     * @param kode Kode blok yang divalidasi
-     * @return true jika sesuai format baku
-     */
     public static boolean isValidKodeBlok(String kode) {
         if (!isValidString(kode)) return false;
         return kode.trim().matches("^[A-Za-z0-9_-]{3,10}$");
     }
 
-    /**
-     * Memvalidasi kode blok lahan menggunakan exception (try-catch pattern).
-     *
-     * @param kode Kode blok yang diuji
-     * @throws IllegalArgumentException jika kode kosong atau format tidak sesuai
-     */
     public static void validateKodeBlok(String kode) throws IllegalArgumentException {
         if (!isValidString(kode)) {
             throw new IllegalArgumentException("Kode blok lahan wajib diisi!");

@@ -60,7 +60,6 @@ public class Evaluasi {
         this.catatanPegawai = (catatanPegawai == null || catatanPegawai.trim().isEmpty()) ? "-" : catatanPegawai.trim();
     }
 
-    // Alias compatibility
     public String getCatatan() { return catatanDireksi != null && !"-".equals(catatanDireksi) ? catatanDireksi : catatanPegawai; }
     public void setCatatan(String catatan) { setCatatanDireksi(catatan); }
 }

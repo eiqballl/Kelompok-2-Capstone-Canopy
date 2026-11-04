@@ -15,7 +15,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <exec.mainClass>CanopyApp</exec.mainClass>
+        <exec.mainClass>main.CanopyApp</exec.mainClass>
     </properties>
 
     <dependencies>
@@ -64,7 +64,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>CanopyApp</mainClass>
+                            <mainClass>main.CanopyApp</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
