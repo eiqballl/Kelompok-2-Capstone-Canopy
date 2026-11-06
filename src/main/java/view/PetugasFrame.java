@@ -50,7 +50,7 @@ public class PetugasFrame extends javax.swing.JFrame {
         cmbFilterBlok.addActionListener(e -> btnTampilkanRekapActionPerformed(null));
         cmbFilterKomoditas.addActionListener(e -> btnTampilkanRekapActionPerformed(null));
 
-        cmbModeRekap.setModel(new javax.swing.DefaultComboBoxModel<>(new String[]{"Semua Data", "Rentang Tanggal", "Bulan Ini", "Hari Ini"}));
+        cmbModeRekap.setModel(new javax.swing.DefaultComboBoxModel<>(new String[]{"Semua Data", "Rentang Tanggal", "Bulan Ini", "Tahun Ini", "Hari Ini"}));
         cmbModeRekap.addActionListener(e -> handleModeRekapChange());
 
         tblPanen.setAutoCreateRowSorter(true);
@@ -138,9 +138,6 @@ public class PetugasFrame extends javax.swing.JFrame {
         }
     }
 
-    private void btnRefreshEvalActionPerformed(java.awt.event.ActionEvent evt) {
-        refreshEvalTable();
-    }
 
     private Panen buildPanen(String id) {
         String block = cmbBlokLahan.getSelectedItem() == null ? "" : cmbBlokLahan.getSelectedItem().toString();
@@ -160,29 +157,46 @@ public class PetugasFrame extends javax.swing.JFrame {
         String input1 = txtInput1.getText().trim();
         String input2 = txtInput2.getText().trim();
         String rejectText = txtTidakLayak.getText().trim();
+        String thnTanam = txtTahunTanamPanen.getText().trim();
         String date = txtTanggalPanen.getText().trim();
-        if (block.isEmpty() || !InputValidator.isValidDate(date)) {
-            JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'>Pilih blok lahan dan gunakan format tanggal YYYY-MM-DD yang valid.</div></html>", "Input Tidak Valid", JOptionPane.WARNING_MESSAGE);
+        if (block.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'><b>Validasi Gagal:</b> Blok lahan wajib dipilih dan tidak boleh kosong!</div></html>", "Input Tidak Valid", JOptionPane.WARNING_MESSAGE);
             return null;
         }
-        if (!InputValidator.isValidInteger(input1) || Integer.parseInt(input1) < 0 ||
-            !InputValidator.isValidInteger(input2) || Integer.parseInt(input2) < 0) {
-            JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'>Nilai rincian panen harus berupa bilangan bulat non-negatif.</div></html>", "Input Tidak Valid", JOptionPane.WARNING_MESSAGE);
+        if (input1.isEmpty() || !InputValidator.isNonNegativeNumber(input1)) {
+            JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'><b>Validasi Gagal:</b> Kolom " + lblInput1.getText().replace(":", "") + " wajib diisi dan berupa angka non-negatif!</div></html>", "Input Tidak Valid", JOptionPane.WARNING_MESSAGE);
+            txtInput1.requestFocus();
             return null;
         }
-        if (!rejectText.isEmpty() && (!InputValidator.isValidInteger(rejectText) || Integer.parseInt(rejectText) < 0)) {
-            JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'>Hasil tidak layak harus berupa bilangan bulat non-negatif (bukan pecahan).</div></html>", "Input Tidak Valid", JOptionPane.WARNING_MESSAGE);
+        if (input2.isEmpty() || !InputValidator.isNonNegativeNumber(input2)) {
+            JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'><b>Validasi Gagal:</b> Kolom " + lblInput2.getText().replace(":", "") + " wajib diisi dan berupa angka non-negatif!</div></html>", "Input Tidak Valid", JOptionPane.WARNING_MESSAGE);
+            txtInput2.requestFocus();
+            return null;
+        }
+        if (rejectText.isEmpty() || !InputValidator.isNonNegativeNumber(rejectText)) {
+            JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'><b>Validasi Gagal:</b> Hasil tidak layak wajib diisi dan harus berupa angka non-negatif (isi 0 jika tidak ada reject)!</div></html>", "Input Tidak Valid", JOptionPane.WARNING_MESSAGE);
+            txtTidakLayak.requestFocus();
+            return null;
+        }
+        if (thnTanam.isEmpty() || !thnTanam.matches("\\d{4}")) {
+            JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'><b>Validasi Gagal:</b> Tahun tanam produk wajib diisi dengan 4 digit angka yang valid (contoh: 2018)!</div></html>", "Input Tidak Valid", JOptionPane.WARNING_MESSAGE);
+            txtTahunTanamPanen.requestFocus();
+            return null;
+        }
+        if (date.isEmpty() || !InputValidator.isValidDate(date)) {
+            JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'><b>Validasi Gagal:</b> Tanggal panen wajib diisi dengan format YYYY-MM-DD yang valid!</div></html>", "Input Tidak Valid", JOptionPane.WARNING_MESSAGE);
+            txtTanggalPanen.requestFocus();
             return null;
         }
         double first = Double.parseDouble(input1);
         double second = Double.parseDouble(input2);
-        double reject = rejectText.isEmpty() ? 0 : Double.parseDouble(rejectText);
+        double reject = Double.parseDouble(rejectText);
         double total = "Sawit".equalsIgnoreCase(commodity) ? Panen.hitungTotalSawit(first, second) : first;
         if (total <= 0 || reject > total) {
             JOptionPane.showMessageDialog(this, "<html><div style='width: 320px;'>Total panen harus lebih dari nol dan hasil tidak layak tidak boleh melebihi total panen (karena hasil tidak layak merupakan bagian dari total panen kotor).</div></html>", "Input Tidak Valid", JOptionPane.WARNING_MESSAGE);
             return null;
         }
-        Panen panen = new Panen(id, date, block, commodity, first, second, total, reject, "");
+        Panen panen = new Panen(id, date, block, commodity, first, second, total, reject, "", thnTanam);
         panen.setKualitas(panen.tentukanKualitas());
         return panen;
     }
@@ -197,6 +211,7 @@ public class PetugasFrame extends javax.swing.JFrame {
                 p.getTanggal(),
                 p.getBlokLahan(),
                 p.getKomoditas(),
+                p.getTahunTanam(),
                 df.format(p.getTotalPanen()),
                 p.getKualitas()
             });
@@ -216,13 +231,14 @@ public class PetugasFrame extends javax.swing.JFrame {
         txtInput1.setText("");
         txtInput2.setText("");
         txtTidakLayak.setText("");
+        txtTahunTanamPanen.setText("");
         txtTanggalPanen.setText(LocalDate.now().toString());
         tblPanen.clearSelection();
     }
 
     private void updateKomoditasLabels() {
         if (rbSawit.isSelected()) {
-            lblInput1.setText("Berat Tandan Segar (Kg):");
+            lblInput1.setText("Jumlah Berat Total Tandan (Kg):");
             lblInput2.setText("Berat Brondolan (Kg):");
         } else {
             lblInput1.setText("Berat Kotor Karet (Kg):");
@@ -253,6 +269,8 @@ public class PetugasFrame extends javax.swing.JFrame {
         txtInput2 = new javax.swing.JTextField();
         lblTidakLayak = new javax.swing.JLabel();
         txtTidakLayak = new javax.swing.JTextField();
+        lblTahunTanamPanen = new javax.swing.JLabel();
+        txtTahunTanamPanen = new javax.swing.JTextField();
         lblTanggal = new javax.swing.JLabel();
         txtTanggalPanen = new DateTextField();
         btnSimpan = new javax.swing.JButton();
@@ -287,7 +305,6 @@ public class PetugasFrame extends javax.swing.JFrame {
         pnlTabEvaluasi = new javax.swing.JPanel();
         lblDaftarEval = new javax.swing.JLabel();
         btnLaporEval = new javax.swing.JButton();
-        btnRefreshEval = new javax.swing.JButton();
         scrollEval = new javax.swing.JScrollPane();
         tblEvaluasi = new javax.swing.JTable();
 
@@ -379,7 +396,7 @@ public class PetugasFrame extends javax.swing.JFrame {
         cmbBlokLahan.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
 
         lblInput1.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        lblInput1.setText("Jumlah Tandan (Janjang):");
+        lblInput1.setText("Jumlah Berat Total Tandan (Kg):");
 
         txtInput1.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
 
@@ -392,6 +409,11 @@ public class PetugasFrame extends javax.swing.JFrame {
         lblTidakLayak.setText("Hasil Panen Tidak Layak (Kg):");
 
         txtTidakLayak.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+
+        lblTahunTanamPanen.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        lblTahunTanamPanen.setText("Tahun Tanam Produk:");
+
+        txtTahunTanamPanen.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
 
         lblTanggal.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblTanggal.setText("Tanggal Panen (YYYY-MM-DD):");
@@ -449,6 +471,7 @@ public class PetugasFrame extends javax.swing.JFrame {
                     .addComponent(txtInput1)
                     .addComponent(txtInput2)
                     .addComponent(txtTidakLayak)
+                    .addComponent(txtTahunTanamPanen)
                     .addComponent(txtTanggalPanen)
                     .addGroup(pnlFormPanenLayout.createSequentialGroup()
                         .addGroup(pnlFormPanenLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -461,6 +484,7 @@ public class PetugasFrame extends javax.swing.JFrame {
                             .addComponent(lblInput1)
                             .addComponent(lblInput2)
                             .addComponent(lblTidakLayak)
+                            .addComponent(lblTahunTanamPanen)
                             .addComponent(lblTanggal))
                         .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(pnlFormPanenLayout.createSequentialGroup()
@@ -499,6 +523,10 @@ public class PetugasFrame extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(txtTidakLayak, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(lblTahunTanamPanen)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(txtTahunTanamPanen, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(lblTanggal)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(txtTanggalPanen, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -525,11 +553,11 @@ public class PetugasFrame extends javax.swing.JFrame {
 
             },
             new String [] {
-                "ID Panen", "Tanggal", "Blok Lahan", "Komoditas", "Total Panen (Kg)", "Kualitas"
+                "ID Panen", "Tanggal", "Blok Lahan", "Komoditas", "Tahun Tanam", "Total Panen (Kg)", "Kualitas"
             }
         ) {
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false
+                false, false, false, false, false, false, false
             };
 
             public boolean isCellEditable(int rowIndex, int columnIndex) {
@@ -575,7 +603,7 @@ public class PetugasFrame extends javax.swing.JFrame {
             .addComponent(splitPanen)
         );
 
-        tabMain.addTab("Input Panen", pnlTabPanen);
+        tabMain.addTab("Kelola Data Panen", pnlTabPanen);
 
         splitRekap.setDividerLocation(380);
         splitRekap.setDividerSize(6);
@@ -781,16 +809,6 @@ public class PetugasFrame extends javax.swing.JFrame {
             }
         });
 
-        btnRefreshEval.setBackground(new java.awt.Color(21, 94, 239));
-        btnRefreshEval.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
-        btnRefreshEval.setForeground(new java.awt.Color(255, 255, 255));
-        btnRefreshEval.setText("Segarkan Data");
-        btnRefreshEval.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnRefreshEvalActionPerformed(evt);
-            }
-        });
-
         tblEvaluasi.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         tblEvaluasi.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -822,9 +840,7 @@ public class PetugasFrame extends javax.swing.JFrame {
                     .addGroup(pnlTabEvaluasiLayout.createSequentialGroup()
                         .addComponent(lblDaftarEval)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(btnLaporEval, javax.swing.GroupLayout.PREFERRED_SIZE, 180, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnRefreshEval, javax.swing.GroupLayout.PREFERRED_SIZE, 130, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addComponent(btnLaporEval, javax.swing.GroupLayout.PREFERRED_SIZE, 180, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())
         );
         pnlTabEvaluasiLayout.setVerticalGroup(
@@ -833,8 +849,7 @@ public class PetugasFrame extends javax.swing.JFrame {
                 .addContainerGap()
                 .addGroup(pnlTabEvaluasiLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(lblDaftarEval)
-                    .addComponent(btnLaporEval, javax.swing.GroupLayout.PREFERRED_SIZE, 34, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btnRefreshEval, javax.swing.GroupLayout.PREFERRED_SIZE, 34, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(btnLaporEval, javax.swing.GroupLayout.PREFERRED_SIZE, 34, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(scrollEval, javax.swing.GroupLayout.DEFAULT_SIZE, 510, Short.MAX_VALUE)
                 .addContainerGap())
@@ -893,9 +908,10 @@ public class PetugasFrame extends javax.swing.JFrame {
 
             for (Panen p : DataStore.getInstance().getPanenList()) {
                 if (p.getIdPanen().equalsIgnoreCase(selectedPanenId)) {
-                    txtInput1.setText(String.valueOf(p.getInput1()));
-                    txtInput2.setText(String.valueOf(p.getInput2()));
-                    txtTidakLayak.setText(String.valueOf(p.getTidakLayak()));
+                    txtInput1.setText(p.getInput1() % 1 == 0 ? String.valueOf((long) p.getInput1()) : String.valueOf(p.getInput1()));
+                    txtInput2.setText(p.getInput2() % 1 == 0 ? String.valueOf((long) p.getInput2()) : String.valueOf(p.getInput2()));
+                    txtTidakLayak.setText(p.getTidakLayak() % 1 == 0 ? String.valueOf((long) p.getTidakLayak()) : String.valueOf(p.getTidakLayak()));
+                    txtTahunTanamPanen.setText(p.getTahunTanam() != null ? p.getTahunTanam() : "2018");
                     break;
                 }
             }
@@ -947,7 +963,7 @@ public class PetugasFrame extends javax.swing.JFrame {
                 refreshRekapTable();
                 resetPanenForm();
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Gagal menghapus panen: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "<html><div style='width: 320px;'><b>Gagal Menghapus Panen:</b><br>" + ex.getMessage() + "</div></html>", "Peringatan", JOptionPane.WARNING_MESSAGE);
             }
         }
     }//GEN-LAST:event_btnHapusActionPerformed
@@ -972,6 +988,12 @@ public class PetugasFrame extends javax.swing.JFrame {
         } else if ("Bulan Ini".equalsIgnoreCase(mode)) {
             LocalDate now = LocalDate.now();
             txtTglAwal.setText(now.withDayOfMonth(1).toString());
+            txtTglAkhir.setText(now.toString());
+            txtTglAwal.setEnabled(false);
+            txtTglAkhir.setEnabled(false);
+        } else if ("Tahun Ini".equalsIgnoreCase(mode)) {
+            LocalDate now = LocalDate.now();
+            txtTglAwal.setText(now.withDayOfYear(1).toString());
             txtTglAkhir.setText(now.toString());
             txtTglAwal.setEnabled(false);
             txtTglAkhir.setEnabled(false);
@@ -1028,6 +1050,7 @@ public class PetugasFrame extends javax.swing.JFrame {
         model.setRowCount(0);
         List<Panen> list = DataStore.getInstance().getPanenList();
         double grandTotal = 0;
+        double totalTidakLayak = 0;
         int count = 0, baik = 0, cukup = 0, kurang = 0;
 
         for (Panen p : list) {
@@ -1040,6 +1063,7 @@ public class PetugasFrame extends javax.swing.JFrame {
 
             if (matchKom && matchMutu && matchBlok && matchTgl) {
                 grandTotal += p.getTotalPanen();
+                totalTidakLayak += p.getTidakLayak();
                 count++;
                 if ("Baik".equalsIgnoreCase(p.getKualitas())) baik++;
                 else if ("Cukup".equalsIgnoreCase(p.getKualitas())) cukup++;
@@ -1056,7 +1080,8 @@ public class PetugasFrame extends javax.swing.JFrame {
             }
         }
 
-        lblTotalRekap.setText("<html><b>Ringkasan:</b> " + count + " Transaksi &nbsp;|&nbsp; <b>Total:</b> " + df.format(grandTotal) + " Kg &nbsp;|&nbsp; <b>Mutu:</b> <font color='#16a34a'>" + baik + " Baik</font>, <font color='#d97706'>" + cukup + " Cukup</font>, <font color='#dc2626'>" + kurang + " Kurang</font></html>");
+        double persenReject = grandTotal > 0 ? (totalTidakLayak / grandTotal) * 100.0 : 0.0;
+        lblTotalRekap.setText("<html><b>Ringkasan:</b> " + count + " Transaksi &nbsp;|&nbsp; <b>Total Panen:</b> " + df.format(grandTotal) + " Kg &nbsp;|&nbsp; <b>Tidak Layak:</b> <font color='#dc2626'>" + df.format(totalTidakLayak) + " Kg (" + df.format(persenReject) + "%)</font> &nbsp;|&nbsp; <b>Mutu:</b> <font color='#16a34a'>" + baik + " Baik</font>, <font color='#d97706'>" + cukup + " Cukup</font>, <font color='#dc2626'>" + kurang + " Kurang</font></html>");
 
         if (count == 0 && evt != null) {
             JOptionPane.showMessageDialog(this,
@@ -1081,7 +1106,6 @@ public class PetugasFrame extends javax.swing.JFrame {
     private javax.swing.JButton btnLogout;
     private javax.swing.JButton btnPerbarui;
     private javax.swing.JButton btnPilihBlok;
-    private javax.swing.JButton btnRefreshEval;
     private javax.swing.JButton btnReset;
     private javax.swing.JButton btnResetRekap;
     private javax.swing.JButton btnSimpan;
@@ -1101,6 +1125,7 @@ public class PetugasFrame extends javax.swing.JFrame {
     private javax.swing.JLabel lblKomoditas;
     private javax.swing.JLabel lblLogoHeader;
     private javax.swing.JLabel lblModeRekap;
+    private javax.swing.JLabel lblTahunTanamPanen;
     private javax.swing.JLabel lblTanggal;
     private javax.swing.JLabel lblTglAkhir;
     private javax.swing.JLabel lblTglAwal;
@@ -1128,6 +1153,7 @@ public class PetugasFrame extends javax.swing.JFrame {
     private javax.swing.JTable tblRekap;
     private javax.swing.JTextField txtInput1;
     private javax.swing.JTextField txtInput2;
+    private javax.swing.JTextField txtTahunTanamPanen;
     private javax.swing.JTextField txtTanggalPanen;
     private javax.swing.JTextField txtTglAkhir;
     private javax.swing.JTextField txtTglAwal;

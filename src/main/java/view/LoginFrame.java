@@ -184,8 +184,14 @@ public class LoginFrame extends javax.swing.JFrame {
     private void btnLoginActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLoginActionPerformed
         String user = txtUsername.getText().trim();
         String pass = new String(txtPassword.getPassword());
-        if (user.isEmpty() || pass.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "<html><div style='width: 280px;'>Username dan password wajib diisi!</div></html>", "Peringatan", JOptionPane.WARNING_MESSAGE);
+        if (user.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "<html><div style='width: 280px;'><b>Validasi Gagal:</b> Username tidak boleh kosong!</div></html>", "Peringatan", JOptionPane.WARNING_MESSAGE);
+            txtUsername.requestFocusInWindow();
+            return;
+        }
+        if (pass.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "<html><div style='width: 280px;'><b>Validasi Gagal:</b> Password tidak boleh kosong!</div></html>", "Peringatan", JOptionPane.WARNING_MESSAGE);
+            txtPassword.requestFocusInWindow();
             return;
         }
 

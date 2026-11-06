@@ -27,6 +27,9 @@ public class DireksiFrame extends javax.swing.JFrame {
             lblUserInfo.setForeground(new java.awt.Color(220, 38, 38));
         }
         initCustomData();
+        refreshBlokTable();
+        refreshRekapTable();
+        refreshEvalTable();
     }
 
     private void applyBranding() {
@@ -49,9 +52,10 @@ public class DireksiFrame extends javax.swing.JFrame {
         cmbFilterBlok.addActionListener(e -> btnTampilkanRekapActionPerformed(null));
         cmbFilterKomoditas.addActionListener(e -> btnTampilkanRekapActionPerformed(null));
 
-        cmbModeRekap.setModel(new javax.swing.DefaultComboBoxModel<>(new String[]{"Semua Data", "Rentang Tanggal", "Bulan Ini", "Hari Ini"}));
+        cmbModeRekap.setModel(new javax.swing.DefaultComboBoxModel<>(new String[]{"Semua Data", "Rentang Tanggal", "Bulan Ini", "Tahun Ini", "Hari Ini"}));
         cmbModeRekap.addActionListener(e -> handleModeRekapChange());
 
+        tblBlokLahan.setAutoCreateRowSorter(true);
         tblRekap.setAutoCreateRowSorter(true);
         tblEvaluasi.setAutoCreateRowSorter(true);
         cmbStatusEval.setModel(new javax.swing.DefaultComboBoxModel<>(new String[]{"Proses", "Selesai"}));
@@ -73,11 +77,13 @@ public class DireksiFrame extends javax.swing.JFrame {
             public void stateChanged(javax.swing.event.ChangeEvent evt) {
                 int idx = tabMain.getSelectedIndex();
                 switch (idx) {
-                    case 0: refreshRekapTable(); break;
-                    case 1: refreshEvalTable(); break;
+                    case 0: refreshBlokTable(); break;
+                    case 1: refreshRekapTable(); break;
+                    case 2: refreshEvalTable(); break;
                 }
             }
         });
+        refreshBlokTable();
         refreshEvalTable();
         LocalDate today = LocalDate.now();
         String start = today.withDayOfMonth(1).toString();
@@ -85,6 +91,20 @@ public class DireksiFrame extends javax.swing.JFrame {
         txtEvalAkhir.setText(today.toString());
         cmbModeRekap.setSelectedItem("Semua Data");
         handleModeRekapChange();
+    }
+
+    public void refreshBlokTable() {
+        if (tblBlokLahan == null) return;
+        DefaultTableModel model = (DefaultTableModel) tblBlokLahan.getModel();
+        model.setRowCount(0);
+        for (BlokLahan b : DataStore.getInstance().getBlokList()) {
+            model.addRow(new Object[]{
+                b.getKodeBlok(),
+                b.getNamaLahan(),
+                df.format(b.getLuasLahan()),
+                b.getKomoditas()
+            });
+        }
     }
 
     public void refreshRekapTable() {
@@ -128,6 +148,9 @@ public class DireksiFrame extends javax.swing.JFrame {
         lblPersenTidakLayak.setText("0.00%");
         cmbStatusEval.setSelectedItem("Proses");
         txtCatatanTindakLanjut.setText("");
+        if (txtCatatanPegawaiView != null) {
+            txtCatatanPegawaiView.setText("");
+        }
         tblEvaluasi.clearSelection();
     }
 
@@ -139,6 +162,10 @@ public class DireksiFrame extends javax.swing.JFrame {
         lblUserInfo = new javax.swing.JLabel();
         btnLogout = new javax.swing.JButton();
         tabMain = new javax.swing.JTabbedPane();
+        pnlTabBlok = new javax.swing.JPanel();
+        lblDaftarBlok = new javax.swing.JLabel();
+        scrollBlok = new javax.swing.JScrollPane();
+        tblBlokLahan = new javax.swing.JTable();
         pnlTabRekap = new javax.swing.JPanel();
         splitRekap = new javax.swing.JSplitPane();
         pnlFilterRekap = new javax.swing.JPanel();
@@ -179,6 +206,9 @@ public class DireksiFrame extends javax.swing.JFrame {
         lblCatatan = new javax.swing.JLabel();
         scrollCatatan = new javax.swing.JScrollPane();
         txtCatatanTindakLanjut = new javax.swing.JTextArea();
+        lblCatatanPegawaiView = new javax.swing.JLabel();
+        scrollCatatanPegawaiView = new javax.swing.JScrollPane();
+        txtCatatanPegawaiView = new javax.swing.JTextArea();
         btnSimpanEval = new javax.swing.JButton();
         btnPerbaruiEval = new javax.swing.JButton();
         btnHapusEval = new javax.swing.JButton();
@@ -431,6 +461,54 @@ public class DireksiFrame extends javax.swing.JFrame {
             .addComponent(splitRekap)
         );
 
+        lblDaftarBlok.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        lblDaftarBlok.setText("Daftar Blok Lahan Perkebunan:");
+
+        tblBlokLahan.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        tblBlokLahan.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+
+            },
+            new String [] {
+                "Kode Blok", "Nama Blok / Lahan", "Luas Lahan (Ha)", "Komoditas"
+            }
+        ) {
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false
+            };
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        tblBlokLahan.setRowHeight(26);
+        scrollBlok.setViewportView(tblBlokLahan);
+
+        javax.swing.GroupLayout pnlTabBlokLayout = new javax.swing.GroupLayout(pnlTabBlok);
+        pnlTabBlok.setLayout(pnlTabBlokLayout);
+        pnlTabBlokLayout.setHorizontalGroup(
+            pnlTabBlokLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(pnlTabBlokLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(pnlTabBlokLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(scrollBlok, javax.swing.GroupLayout.DEFAULT_SIZE, 1150, Short.MAX_VALUE)
+                    .addGroup(pnlTabBlokLayout.createSequentialGroup()
+                        .addComponent(lblDaftarBlok)
+                        .addGap(0, 0, Short.MAX_VALUE)))
+                .addContainerGap())
+        );
+        pnlTabBlokLayout.setVerticalGroup(
+            pnlTabBlokLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(pnlTabBlokLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(lblDaftarBlok)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(scrollBlok, javax.swing.GroupLayout.DEFAULT_SIZE, 510, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+
+        tabMain.addTab("Lihat Blok Lahan", pnlTabBlok);
+
         tabMain.addTab("Rekapitulasi", pnlTabRekap);
 
         splitEval.setDividerLocation(340);
@@ -457,7 +535,7 @@ public class DireksiFrame extends javax.swing.JFrame {
         btnHitungMetrik.setBackground(new java.awt.Color(21, 94, 239));
         btnHitungMetrik.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         btnHitungMetrik.setForeground(new java.awt.Color(255, 255, 255));
-        btnHitungMetrik.setText("Kalkulasi Metrik Otomatis");
+        btnHitungMetrik.setText("Hitung Metrik");
         btnHitungMetrik.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnHitungMetrik.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -527,6 +605,17 @@ public class DireksiFrame extends javax.swing.JFrame {
         txtCatatanTindakLanjut.setWrapStyleWord(true);
         scrollCatatan.setViewportView(txtCatatanTindakLanjut);
 
+        lblCatatanPegawaiView.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        lblCatatanPegawaiView.setText("Laporan Tindak Lanjut Petugas:");
+
+        txtCatatanPegawaiView.setEditable(false);
+        txtCatatanPegawaiView.setBackground(new java.awt.Color(241, 245, 249));
+        txtCatatanPegawaiView.setColumns(20);
+        txtCatatanPegawaiView.setLineWrap(true);
+        txtCatatanPegawaiView.setRows(3);
+        txtCatatanPegawaiView.setWrapStyleWord(true);
+        scrollCatatanPegawaiView.setViewportView(txtCatatanPegawaiView);
+
         btnSimpanEval.setBackground(new java.awt.Color(21, 94, 239));
         btnSimpanEval.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         btnSimpanEval.setForeground(new java.awt.Color(255, 255, 255));
@@ -578,6 +667,7 @@ public class DireksiFrame extends javax.swing.JFrame {
                     .addComponent(pnlMetrikCard, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(cmbStatusEval, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(scrollCatatan)
+                    .addComponent(scrollCatatanPegawaiView)
                     .addGroup(pnlFormEvalLayout.createSequentialGroup()
                         .addGroup(pnlFormEvalLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(lblEvalAwal)
@@ -590,7 +680,8 @@ public class DireksiFrame extends javax.swing.JFrame {
                         .addGroup(pnlFormEvalLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(lblEvalPeriode)
                             .addComponent(lblStatusEval)
-                            .addComponent(lblCatatan))
+                            .addComponent(lblCatatan)
+                            .addComponent(lblCatatanPegawaiView))
                         .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(pnlFormEvalLayout.createSequentialGroup()
                         .addComponent(btnSimpanEval, javax.swing.GroupLayout.PREFERRED_SIZE, 125, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -626,14 +717,18 @@ public class DireksiFrame extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(lblCatatan)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(scrollCatatan, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(scrollCatatan, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(lblCatatanPegawaiView)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(scrollCatatanPegawaiView, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addGroup(pnlFormEvalLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnSimpanEval, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnPerbaruiEval, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnHapusEval, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnResetEval, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(50, Short.MAX_VALUE))
+                .addContainerGap(40, Short.MAX_VALUE))
         );
 
         splitEval.setLeftComponent(pnlFormEval);
@@ -757,6 +852,12 @@ public class DireksiFrame extends javax.swing.JFrame {
             txtTglAkhir.setText(now.toString());
             txtTglAwal.setEnabled(false);
             txtTglAkhir.setEnabled(false);
+        } else if ("Tahun Ini".equalsIgnoreCase(mode)) {
+            LocalDate now = LocalDate.now();
+            txtTglAwal.setText(now.withDayOfYear(1).toString());
+            txtTglAkhir.setText(now.toString());
+            txtTglAwal.setEnabled(false);
+            txtTglAkhir.setEnabled(false);
         } else { // "Rentang Tanggal"
             txtTglAwal.setEnabled(true);
             txtTglAkhir.setEnabled(true);
@@ -790,6 +891,7 @@ public class DireksiFrame extends javax.swing.JFrame {
         model.setRowCount(0);
         List<Panen> list = DataStore.getInstance().getPanenList();
         double grandTotal = 0;
+        double totalTidakLayak = 0;
         int count = 0, baik = 0, cukup = 0, kurang = 0;
 
         for (Panen p : list) {
@@ -802,6 +904,7 @@ public class DireksiFrame extends javax.swing.JFrame {
 
             if (matchKom && matchMutu && matchBlok && matchTgl) {
                 grandTotal += p.getTotalPanen();
+                totalTidakLayak += p.getTidakLayak();
                 count++;
                 if ("Baik".equalsIgnoreCase(p.getKualitas())) baik++;
                 else if ("Cukup".equalsIgnoreCase(p.getKualitas())) cukup++;
@@ -818,7 +921,8 @@ public class DireksiFrame extends javax.swing.JFrame {
             }
         }
 
-        lblTotalRekap.setText("<html><b>Ringkasan:</b> " + count + " Transaksi &nbsp;|&nbsp; <b>Total:</b> " + df.format(grandTotal) + " Kg &nbsp;|&nbsp; <b>Mutu:</b> <font color='#16a34a'>" + baik + " Baik</font>, <font color='#d97706'>" + cukup + " Cukup</font>, <font color='#dc2626'>" + kurang + " Kurang</font></html>");
+        double persenReject = grandTotal > 0 ? (totalTidakLayak / grandTotal) * 100.0 : 0.0;
+        lblTotalRekap.setText("<html><b>Ringkasan:</b> " + count + " Transaksi &nbsp;|&nbsp; <b>Total Panen:</b> " + df.format(grandTotal) + " Kg &nbsp;|&nbsp; <b>Tidak Layak:</b> <font color='#dc2626'>" + df.format(totalTidakLayak) + " Kg (" + df.format(persenReject) + "%)</font> &nbsp;|&nbsp; <b>Mutu:</b> <font color='#16a34a'>" + baik + " Baik</font>, <font color='#d97706'>" + cukup + " Cukup</font>, <font color='#dc2626'>" + kurang + " Kurang</font></html>");
 
         if (count == 0 && evt != null) {
             JOptionPane.showMessageDialog(this,
@@ -843,11 +947,18 @@ public class DireksiFrame extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'>Masukkan rentang tanggal valid dengan tanggal awal sebelum atau sama dengan tanggal akhir.</div></html>", "Rentang Tanggal Tidak Valid", JOptionPane.WARNING_MESSAGE);
             return;
         }
+
         double[] metrics = DataStore.getInstance().calculateMetrics(tglAwal, tglAkhir);
 
         lblTotalBulan.setText("<html>" + df.format(metrics[0]) + " Kg<br><span style=\'font-size:10px;font-weight:normal;color:#64748b;\'>Rata-rata: " + df.format(metrics[2]) + " Kg/bln</span></html>");
         lblPersenTidakLayak.setText(df.format(metrics[1]) + "%");
-        cmbStatusEval.setSelectedItem("Proses");
+        
+        String defaultStatus = (metrics[0] > 0 && metrics[1] <= 4.0) ? "Selesai" : "Proses";
+        cmbStatusEval.setSelectedItem(defaultStatus);
+
+        if (metrics[0] <= 0) {
+            JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'>Data hasil panen pada rentang periode ini belum tersedia.</div></html>", "Informasi", JOptionPane.INFORMATION_MESSAGE);
+        }
     }//GEN-LAST:event_btnHitungMetrikActionPerformed
 
     private void btnSimpanEvalActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSimpanEvalActionPerformed
@@ -857,12 +968,27 @@ public class DireksiFrame extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'>Masukkan rentang tanggal valid dengan tanggal awal sebelum atau sama dengan tanggal akhir.</div></html>", "Rentang Tanggal Tidak Valid", JOptionPane.WARNING_MESSAGE);
             return;
         }
+
+        for (Evaluasi existingEv : DataStore.getInstance().getEvaluasiList()) {
+            if (existingEv.getTglAwal().equals(tglAwal) && existingEv.getTglAkhir().equals(tglAkhir)) {
+                JOptionPane.showMessageDialog(this,
+                    "<html><div style='width: 320px;'><b>Evaluasi Duplikat:</b> Evaluasi untuk rentang periode <b>"
+                    + tglAwal + "</b> s.d. <b>" + tglAkhir + "</b> sudah ada dalam sistem dengan ID: <b>"
+                    + existingEv.getIdEval() + "</b>.<br><br>Silakan perbarui data yang ada jika ingin mengubah arahan atau status evaluasi.</div></html>",
+                    "Peringatan Duplikasi", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+        }
+
         double[] metrics = DataStore.getInstance().calculateMetrics(tglAwal, tglAkhir);
 
-        String status = cmbStatusEval.getSelectedItem().toString();
+        String status = cmbStatusEval.getSelectedItem() != null ? cmbStatusEval.getSelectedItem().toString() : "Proses";
+        if (status.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Status evaluasi wajib dipilih (Proses atau Selesai)!", "Validasi Gagal", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
         String catatan = txtCatatanTindakLanjut.getText().trim();
 
-        if (status.isEmpty()) status = "Selesai";
         String newId = DataStore.getInstance().generateEvalId();
 
         Evaluasi ev = new Evaluasi(newId, tglAwal, tglAkhir, metrics[0], metrics[1], status, catatan, "-");
@@ -892,7 +1018,11 @@ public class DireksiFrame extends javax.swing.JFrame {
         if (confirm != JOptionPane.YES_OPTION) return;
 
         double[] metrics = DataStore.getInstance().calculateMetrics(tglAwal, tglAkhir);
-        String status = cmbStatusEval.getSelectedItem().toString();
+        String status = cmbStatusEval.getSelectedItem() != null ? cmbStatusEval.getSelectedItem().toString() : "Proses";
+        if (status.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Status evaluasi wajib dipilih (Proses atau Selesai)!", "Validasi Gagal", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
         String catatan = txtCatatanTindakLanjut.getText().trim();
 
         Evaluasi existing = null;
@@ -928,7 +1058,7 @@ public class DireksiFrame extends javax.swing.JFrame {
                 refreshEvalTable();
                 resetEvalForm();
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Gagal menghapus evaluasi: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "<html><div style='width: 320px;'><b>Gagal Menghapus Evaluasi:</b><br>" + ex.getMessage() + "</div></html>", "Peringatan", JOptionPane.WARNING_MESSAGE);
             }
         }
     }//GEN-LAST:event_btnHapusEvalActionPerformed
@@ -948,6 +1078,9 @@ public class DireksiFrame extends javax.swing.JFrame {
             lblPersenTidakLayak.setText(df.format(ev.getPersenTidakLayak()) + "%");
             cmbStatusEval.setSelectedItem("Selesai".equalsIgnoreCase(ev.getStatus()) ? "Selesai" : "Proses");
             txtCatatanTindakLanjut.setText(ev.getCatatanDireksi());
+            if (txtCatatanPegawaiView != null) {
+                txtCatatanPegawaiView.setText(ev.getCatatanPegawai() == null || "-".equals(ev.getCatatanPegawai()) ? "(Belum ada laporan tindak lanjut dari petugas)" : ev.getCatatanPegawai());
+            }
         }
     }//GEN-LAST:event_tblEvaluasiMouseClicked
 
@@ -966,6 +1099,8 @@ public class DireksiFrame extends javax.swing.JFrame {
     private javax.swing.JComboBox<String> cmbModeRekap;
     private javax.swing.JComboBox<String> cmbStatusEval;
     private javax.swing.JLabel lblCatatan;
+    private javax.swing.JLabel lblCatatanPegawaiView;
+    private javax.swing.JLabel lblDaftarBlok;
     private javax.swing.JLabel lblDaftarEval;
     private javax.swing.JLabel lblDaftarRekap;
     private javax.swing.JLabel lblEvalAkhir;
@@ -988,18 +1123,23 @@ public class DireksiFrame extends javax.swing.JFrame {
     private javax.swing.JPanel pnlFormEval;
     private javax.swing.JPanel pnlHeader;
     private javax.swing.JPanel pnlMetrikCard;
+    private javax.swing.JPanel pnlTabBlok;
     private javax.swing.JPanel pnlTabEval;
     private javax.swing.JPanel pnlTabRekap;
     private javax.swing.JPanel pnlTabelEval;
     private javax.swing.JPanel pnlTabelRekap;
+    private javax.swing.JScrollPane scrollBlok;
     private javax.swing.JScrollPane scrollCatatan;
+    private javax.swing.JScrollPane scrollCatatanPegawaiView;
     private javax.swing.JScrollPane scrollEval;
     private javax.swing.JScrollPane scrollRekap;
     private javax.swing.JSplitPane splitEval;
     private javax.swing.JSplitPane splitRekap;
     private javax.swing.JTabbedPane tabMain;
+    private javax.swing.JTable tblBlokLahan;
     private javax.swing.JTable tblEvaluasi;
     private javax.swing.JTable tblRekap;
+    private javax.swing.JTextArea txtCatatanPegawaiView;
     private javax.swing.JTextArea txtCatatanTindakLanjut;
     private javax.swing.JTextField txtEvalAkhir;
     private javax.swing.JTextField txtEvalAwal;

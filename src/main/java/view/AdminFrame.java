@@ -56,7 +56,7 @@ public class AdminFrame extends javax.swing.JFrame {
         cmbFilterBlok.addActionListener(e -> btnTampilkanRekapActionPerformed(null));
         cmbFilterKomoditas.addActionListener(e -> btnTampilkanRekapActionPerformed(null));
 
-        cmbModeRekap.setModel(new javax.swing.DefaultComboBoxModel<>(new String[]{"Semua Data", "Rentang Tanggal", "Bulan Ini", "Hari Ini"}));
+        cmbModeRekap.setModel(new javax.swing.DefaultComboBoxModel<>(new String[]{"Semua Data", "Rentang Tanggal", "Bulan Ini", "Tahun Ini", "Hari Ini"}));
         cmbModeRekap.addActionListener(e -> handleModeRekapChange());
         
         cmbStatusEval.setModel(new javax.swing.DefaultComboBoxModel<>(new String[]{"Proses", "Selesai"}));
@@ -146,19 +146,7 @@ public class AdminFrame extends javax.swing.JFrame {
     }
     
     private String generateKodeBlokOtomatis(String komoditas) {
-        String prefix = "Karet".equalsIgnoreCase(komoditas) ? "KR" : "SW";
-        int maxNum = 0;
-
-        for (model.BlokLahan b : model.DataStore.getInstance().getBlokList()) {
-            String kode = b.getKodeBlok();
-            if (kode != null && kode.toUpperCase().startsWith(prefix)) {
-                try {
-                    int num = Integer.parseInt(kode.substring(2));
-                    if (num > maxNum) maxNum = num;
-                } catch (NumberFormatException ignored) {}
-            }
-        }
-        return String.format("%s%03d", prefix, maxNum + 1);
+        return DataStore.getInstance().generateBlokKode(komoditas);
     }
 
     public void refreshBlokTable() {
@@ -169,17 +157,17 @@ public class AdminFrame extends javax.swing.JFrame {
                 b.getKodeBlok(),
                 b.getNamaLahan(),
                 df.format(b.getLuasLahan()),
-                b.getKomoditas(),
-                b.getTahunTanam()
+                b.getKomoditas()
             });
         }
         loadBlokComboBox();
     }
 
     private void resetBlokForm() {
-    String komoditasPilihan = cmbKomoditasBlok.getSelectedItem() != null ? cmbKomoditasBlok.getSelectedItem().toString() : "Sawit";
-    txtKodeBlok.setText(generateKodeBlokOtomatis(komoditasPilihan));
-    txtKodeBlok.setEditable(false);
+        selectedBlokKode = null;
+        txtNamaLahan.setText("");
+        txtLuasLahan.setText("");
+        tblBlokLahan.clearSelection();
     }
 
     public void refreshPegawaiTable() {
@@ -258,29 +246,46 @@ public class AdminFrame extends javax.swing.JFrame {
         String input1 = txtInput1.getText().trim();
         String input2 = txtInput2.getText().trim();
         String rejectText = txtTidakLayak.getText().trim();
+        String thnTanam = txtTahunTanamPanen.getText().trim();
         String date = txtTanggalPanen.getText().trim();
-        if (block.isEmpty() || !InputValidator.isValidDate(date)) {
-            JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'>Pilih blok lahan dan gunakan format tanggal YYYY-MM-DD yang valid.</div></html>", "Input Tidak Valid", JOptionPane.WARNING_MESSAGE);
+        if (block.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'><b>Validasi Gagal:</b> Blok lahan wajib dipilih dan tidak boleh kosong!</div></html>", "Input Tidak Valid", JOptionPane.WARNING_MESSAGE);
             return null;
         }
-        if (!InputValidator.isValidInteger(input1) || Integer.parseInt(input1) < 0 ||
-            !InputValidator.isValidInteger(input2) || Integer.parseInt(input2) < 0) {
-            JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'>Nilai rincian panen harus berupa bilangan bulat non-negatif.</div></html>", "Input Tidak Valid", JOptionPane.WARNING_MESSAGE);
+        if (input1.isEmpty() || !InputValidator.isNonNegativeNumber(input1)) {
+            JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'><b>Validasi Gagal:</b> Kolom " + lblInput1.getText().replace(":", "") + " wajib diisi dan berupa angka non-negatif!</div></html>", "Input Tidak Valid", JOptionPane.WARNING_MESSAGE);
+            txtInput1.requestFocus();
             return null;
         }
-        if (!rejectText.isEmpty() && (!InputValidator.isValidInteger(rejectText) || Integer.parseInt(rejectText) < 0)) {
-            JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'>Hasil tidak layak harus berupa bilangan bulat non-negatif (bukan pecahan).</div></html>", "Input Tidak Valid", JOptionPane.WARNING_MESSAGE);
+        if (input2.isEmpty() || !InputValidator.isNonNegativeNumber(input2)) {
+            JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'><b>Validasi Gagal:</b> Kolom " + lblInput2.getText().replace(":", "") + " wajib diisi dan berupa angka non-negatif!</div></html>", "Input Tidak Valid", JOptionPane.WARNING_MESSAGE);
+            txtInput2.requestFocus();
+            return null;
+        }
+        if (rejectText.isEmpty() || !InputValidator.isNonNegativeNumber(rejectText)) {
+            JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'><b>Validasi Gagal:</b> Hasil tidak layak wajib diisi dan harus berupa angka non-negatif (isi 0 jika tidak ada reject)!</div></html>", "Input Tidak Valid", JOptionPane.WARNING_MESSAGE);
+            txtTidakLayak.requestFocus();
+            return null;
+        }
+        if (thnTanam.isEmpty() || !thnTanam.matches("\\d{4}")) {
+            JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'><b>Validasi Gagal:</b> Tahun tanam produk wajib diisi dengan 4 digit angka yang valid (contoh: 2018)!</div></html>", "Input Tidak Valid", JOptionPane.WARNING_MESSAGE);
+            txtTahunTanamPanen.requestFocus();
+            return null;
+        }
+        if (date.isEmpty() || !InputValidator.isValidDate(date)) {
+            JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'><b>Validasi Gagal:</b> Tanggal panen wajib diisi dengan format YYYY-MM-DD yang valid!</div></html>", "Input Tidak Valid", JOptionPane.WARNING_MESSAGE);
+            txtTanggalPanen.requestFocus();
             return null;
         }
         double first = Double.parseDouble(input1);
         double second = Double.parseDouble(input2);
-        double reject = rejectText.isEmpty() ? 0 : Double.parseDouble(rejectText);
+        double reject = Double.parseDouble(rejectText);
         double total = "Sawit".equalsIgnoreCase(commodity) ? Panen.hitungTotalSawit(first, second) : first;
         if (total <= 0 || reject > total) {
             JOptionPane.showMessageDialog(this, "<html><div style='width: 320px;'>Total panen harus lebih dari nol dan hasil tidak layak tidak boleh melebihi total panen (karena hasil tidak layak merupakan bagian dari total panen kotor).</div></html>", "Input Tidak Valid", JOptionPane.WARNING_MESSAGE);
             return null;
         }
-        Panen panen = new Panen(id, date, block, commodity, first, second, total, reject, "");
+        Panen panen = new Panen(id, date, block, commodity, first, second, total, reject, "", thnTanam);
         panen.setKualitas(panen.tentukanKualitas());
         return panen;
     }
@@ -294,6 +299,7 @@ public class AdminFrame extends javax.swing.JFrame {
                 p.getTanggal(),
                 p.getBlokLahan(),
                 p.getKomoditas(),
+                p.getTahunTanam(),
                 df.format(p.getTotalPanen()),
                 p.getKualitas()
             });
@@ -309,13 +315,14 @@ public class AdminFrame extends javax.swing.JFrame {
         txtInput1.setText("");
         txtInput2.setText("");
         txtTidakLayak.setText("");
+        txtTahunTanamPanen.setText("");
         txtTanggalPanen.setText(LocalDate.now().toString());
         tblPanen.clearSelection();
     }
 
     private void updateKomoditasLabels() {
         if (rbSawit.isSelected()) {
-            lblInput1.setText("Berat Tandan Segar (Kg):");
+            lblInput1.setText("Jumlah Berat Total Tandan (Kg):");
             lblInput2.setText("Berat Brondolan (Kg):");
         } else {
             lblInput1.setText("Berat Kotor Karet (Kg):");
@@ -353,6 +360,9 @@ public class AdminFrame extends javax.swing.JFrame {
         lblPersenTidakLayak.setText("0.00%");
         cmbStatusEval.setSelectedItem("Proses");
         txtCatatanTindakLanjut.setText("");
+        if (txtCatatanPegawaiView != null) {
+            txtCatatanPegawaiView.setText("");
+        }
         tblEvaluasi.clearSelection();
     }
 
@@ -368,16 +378,12 @@ public class AdminFrame extends javax.swing.JFrame {
         pnlTabBlok = new javax.swing.JPanel();
         splitBlok = new javax.swing.JSplitPane();
         pnlFormBlok = new javax.swing.JPanel();
-        lblKodeBlok = new javax.swing.JLabel();
-        txtKodeBlok = new javax.swing.JTextField();
         lblNamaLahan = new javax.swing.JLabel();
         txtNamaLahan = new javax.swing.JTextField();
         lblLuasLahan = new javax.swing.JLabel();
         txtLuasLahan = new javax.swing.JTextField();
         lblKomoditasBlok = new javax.swing.JLabel();
         cmbKomoditasBlok = new javax.swing.JComboBox<>();
-        lblTahunTanam = new javax.swing.JLabel();
-        txtTahunTanam = new javax.swing.JTextField();
         btnSimpanBlok = new javax.swing.JButton();
         btnPerbaruiBlok = new javax.swing.JButton();
         btnHapusBlok = new javax.swing.JButton();
@@ -424,6 +430,8 @@ public class AdminFrame extends javax.swing.JFrame {
         txtInput2 = new javax.swing.JTextField();
         lblTidakLayak = new javax.swing.JLabel();
         txtTidakLayak = new javax.swing.JTextField();
+        lblTahunTanamPanen = new javax.swing.JLabel();
+        txtTahunTanamPanen = new javax.swing.JTextField();
         lblTanggal = new javax.swing.JLabel();
         txtTanggalPanen = new DateTextField();
         btnSimpan = new javax.swing.JButton();
@@ -432,7 +440,6 @@ public class AdminFrame extends javax.swing.JFrame {
         btnReset = new javax.swing.JButton();
         pnlTabelPanen = new javax.swing.JPanel();
         lblDaftarPanen = new javax.swing.JLabel();
-        btnLihatRiwayat = new javax.swing.JButton();
         scrollPanen = new javax.swing.JScrollPane();
         tblPanen = new javax.swing.JTable();
         pnlTabRekap = new javax.swing.JPanel();
@@ -475,6 +482,9 @@ public class AdminFrame extends javax.swing.JFrame {
         lblCatatan = new javax.swing.JLabel();
         scrollCatatan = new javax.swing.JScrollPane();
         txtCatatanTindakLanjut = new javax.swing.JTextArea();
+        lblCatatanPegawaiView = new javax.swing.JLabel();
+        scrollCatatanPegawaiView = new javax.swing.JScrollPane();
+        txtCatatanPegawaiView = new javax.swing.JTextArea();
         btnSimpanEval = new javax.swing.JButton();
         btnPerbaruiEval = new javax.swing.JButton();
         btnHapusEval = new javax.swing.JButton();
@@ -543,16 +553,6 @@ public class AdminFrame extends javax.swing.JFrame {
         pnlFormBlok.setBackground(new java.awt.Color(255, 255, 255));
         pnlFormBlok.setBorder(javax.swing.BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-        lblKodeBlok.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        lblKodeBlok.setText("Kode Blok:");
-
-        txtKodeBlok.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
-        txtKodeBlok.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                txtKodeBlokActionPerformed(evt);
-            }
-        });
-
         lblNamaLahan.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblNamaLahan.setText("Nama Blok / Lahan:");
 
@@ -572,11 +572,6 @@ public class AdminFrame extends javax.swing.JFrame {
                 cmbKomoditasBlokActionPerformed(evt);
             }
         });
-
-        lblTahunTanam.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        lblTahunTanam.setText("Tahun Tanam:");
-
-        txtTahunTanam.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
 
         btnSimpanBlok.setBackground(new java.awt.Color(21, 94, 239));
         btnSimpanBlok.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
@@ -625,18 +620,14 @@ public class AdminFrame extends javax.swing.JFrame {
             .addGroup(pnlFormBlokLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(pnlFormBlokLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(txtKodeBlok)
                     .addComponent(txtNamaLahan)
                     .addComponent(txtLuasLahan)
                     .addComponent(cmbKomoditasBlok, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(txtTahunTanam)
                     .addGroup(pnlFormBlokLayout.createSequentialGroup()
                         .addGroup(pnlFormBlokLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(lblKodeBlok)
                             .addComponent(lblNamaLahan)
                             .addComponent(lblLuasLahan)
-                            .addComponent(lblKomoditasBlok)
-                            .addComponent(lblTahunTanam))
+                            .addComponent(lblKomoditasBlok))
                         .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(pnlFormBlokLayout.createSequentialGroup()
                         .addComponent(btnSimpanBlok, javax.swing.GroupLayout.PREFERRED_SIZE, 90, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -652,10 +643,6 @@ public class AdminFrame extends javax.swing.JFrame {
             pnlFormBlokLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(pnlFormBlokLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(lblKodeBlok)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(txtKodeBlok, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(lblNamaLahan)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(txtNamaLahan, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -667,10 +654,6 @@ public class AdminFrame extends javax.swing.JFrame {
                 .addComponent(lblKomoditasBlok)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(cmbKomoditasBlok, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(lblTahunTanam)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(txtTahunTanam, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(24, 24, 24)
                 .addGroup(pnlFormBlokLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnSimpanBlok, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -689,6 +672,22 @@ public class AdminFrame extends javax.swing.JFrame {
         lblDaftarBlok.setText("Daftar Blok Lahan Perkebunan:");
 
         tblBlokLahan.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        tblBlokLahan.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+
+            },
+            new String [] {
+                "Kode Blok", "Nama Blok / Lahan", "Luas Lahan (Ha)", "Komoditas"
+            }
+        ) {
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false
+            };
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
         tblBlokLahan.setRowHeight(26);
         scrollBlok.setViewportView(tblBlokLahan);
 
@@ -893,6 +892,22 @@ public class AdminFrame extends javax.swing.JFrame {
         lblDaftarPegawai.setText("Daftar Akun Pegawai & Pengguna:");
 
         tblPegawai.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        tblPegawai.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+
+            },
+            new String [] {
+                "ID Pegawai", "Nama Pegawai", "Username", "No. Telepon", "Role"
+            }
+        ) {
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false, false
+            };
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
         tblPegawai.setRowHeight(26);
         scrollPegawai.setViewportView(tblPegawai);
 
@@ -968,7 +983,7 @@ public class AdminFrame extends javax.swing.JFrame {
         cmbBlokLahan.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
 
         lblInput1.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        lblInput1.setText("Jumlah Tandan (Janjang):");
+        lblInput1.setText("Jumlah Berat Total Tandan (Kg):");
 
         txtInput1.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
 
@@ -981,6 +996,11 @@ public class AdminFrame extends javax.swing.JFrame {
         lblTidakLayak.setText("Hasil Panen Tidak Layak (Kg):");
 
         txtTidakLayak.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+
+        lblTahunTanamPanen.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        lblTahunTanamPanen.setText("Tahun Tanam Produk:");
+
+        txtTahunTanamPanen.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
 
         lblTanggal.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         lblTanggal.setText("Tanggal Panen (YYYY-MM-DD):");
@@ -1038,6 +1058,7 @@ public class AdminFrame extends javax.swing.JFrame {
                     .addComponent(txtInput1)
                     .addComponent(txtInput2)
                     .addComponent(txtTidakLayak)
+                    .addComponent(txtTahunTanamPanen)
                     .addComponent(txtTanggalPanen)
                     .addGroup(pnlFormPanenLayout.createSequentialGroup()
                         .addGroup(pnlFormPanenLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1050,6 +1071,7 @@ public class AdminFrame extends javax.swing.JFrame {
                             .addComponent(lblInput1)
                             .addComponent(lblInput2)
                             .addComponent(lblTidakLayak)
+                            .addComponent(lblTahunTanamPanen)
                             .addComponent(lblTanggal))
                         .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(pnlFormPanenLayout.createSequentialGroup()
@@ -1088,6 +1110,10 @@ public class AdminFrame extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(txtTidakLayak, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(lblTahunTanamPanen)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(txtTahunTanamPanen, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(lblTanggal)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(txtTanggalPanen, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -1108,28 +1134,17 @@ public class AdminFrame extends javax.swing.JFrame {
         lblDaftarPanen.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
         lblDaftarPanen.setText("Daftar Hasil Panen:");
 
-        btnLihatRiwayat.setBackground(new java.awt.Color(79, 70, 229));
-        btnLihatRiwayat.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        btnLihatRiwayat.setForeground(new java.awt.Color(255, 255, 255));
-        btnLihatRiwayat.setText("Lihat Riwayat Perubahan");
-        btnLihatRiwayat.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        btnLihatRiwayat.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnLihatRiwayatActionPerformed(evt);
-            }
-        });
-
         tblPanen.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         tblPanen.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
 
             },
             new String [] {
-                "ID Panen", "Tanggal", "Blok Lahan", "Komoditas", "Total Panen (Kg)", "Kualitas"
+                "ID Panen", "Tanggal", "Blok Lahan", "Komoditas", "Tahun Tanam", "Total Panen (Kg)", "Kualitas"
             }
         ) {
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false
+                false, false, false, false, false, false, false
             };
 
             public boolean isCellEditable(int rowIndex, int columnIndex) {
@@ -1147,19 +1162,14 @@ public class AdminFrame extends javax.swing.JFrame {
                 .addContainerGap()
                 .addGroup(pnlTabelPanenLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(scrollPanen, javax.swing.GroupLayout.DEFAULT_SIZE, 732, Short.MAX_VALUE)
-                    .addGroup(pnlTabelPanenLayout.createSequentialGroup()
-                        .addComponent(lblDaftarPanen)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(btnLihatRiwayat, javax.swing.GroupLayout.PREFERRED_SIZE, 275, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addComponent(lblDaftarPanen))
                 .addContainerGap())
         );
         pnlTabelPanenLayout.setVerticalGroup(
             pnlTabelPanenLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(pnlTabelPanenLayout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(pnlTabelPanenLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(lblDaftarPanen)
-                    .addComponent(btnLihatRiwayat, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addComponent(lblDaftarPanen)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(scrollPanen, javax.swing.GroupLayout.DEFAULT_SIZE, 487, Short.MAX_VALUE)
                 .addContainerGap())
@@ -1396,7 +1406,7 @@ public class AdminFrame extends javax.swing.JFrame {
         btnHitungMetrik.setBackground(new java.awt.Color(21, 94, 239));
         btnHitungMetrik.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         btnHitungMetrik.setForeground(new java.awt.Color(255, 255, 255));
-        btnHitungMetrik.setText("Kalkulasi Metrik Otomatis");
+        btnHitungMetrik.setText("Hitung Metrik");
         btnHitungMetrik.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         btnHitungMetrik.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -1471,6 +1481,17 @@ public class AdminFrame extends javax.swing.JFrame {
         txtCatatanTindakLanjut.setWrapStyleWord(true);
         scrollCatatan.setViewportView(txtCatatanTindakLanjut);
 
+        lblCatatanPegawaiView.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        lblCatatanPegawaiView.setText("Laporan Tindak Lanjut Petugas:");
+
+        txtCatatanPegawaiView.setEditable(false);
+        txtCatatanPegawaiView.setBackground(new java.awt.Color(241, 245, 249));
+        txtCatatanPegawaiView.setColumns(20);
+        txtCatatanPegawaiView.setLineWrap(true);
+        txtCatatanPegawaiView.setRows(3);
+        txtCatatanPegawaiView.setWrapStyleWord(true);
+        scrollCatatanPegawaiView.setViewportView(txtCatatanPegawaiView);
+
         btnSimpanEval.setBackground(new java.awt.Color(21, 94, 239));
         btnSimpanEval.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
         btnSimpanEval.setForeground(new java.awt.Color(255, 255, 255));
@@ -1522,6 +1543,7 @@ public class AdminFrame extends javax.swing.JFrame {
                     .addComponent(pnlMetrikCard, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(cmbStatusEval, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(scrollCatatan)
+                    .addComponent(scrollCatatanPegawaiView)
                     .addGroup(pnlFormEvalLayout.createSequentialGroup()
                         .addGroup(pnlFormEvalLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(lblEvalAwal)
@@ -1534,7 +1556,8 @@ public class AdminFrame extends javax.swing.JFrame {
                         .addGroup(pnlFormEvalLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(lblEvalPeriode)
                             .addComponent(lblStatusEval)
-                            .addComponent(lblCatatan))
+                            .addComponent(lblCatatan)
+                            .addComponent(lblCatatanPegawaiView))
                         .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(pnlFormEvalLayout.createSequentialGroup()
                         .addComponent(btnSimpanEval, javax.swing.GroupLayout.PREFERRED_SIZE, 125, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -1570,14 +1593,18 @@ public class AdminFrame extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(lblCatatan)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(scrollCatatan, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(scrollCatatan, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(lblCatatanPegawaiView)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(scrollCatatanPegawaiView, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addGroup(pnlFormEvalLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnSimpanEval, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnPerbaruiEval, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnHapusEval, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnResetEval, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(50, Short.MAX_VALUE))
+                .addContainerGap(40, Short.MAX_VALUE))
         );
 
         splitEval.setLeftComponent(pnlFormEval);
@@ -1673,8 +1700,32 @@ public class AdminFrame extends javax.swing.JFrame {
         String kodeBlok = txtKodeBlok.getText().trim();
         String namaLahan = txtNamaLahan.getText().trim();
         String luasStr = txtLuasLahan.getText().trim();
-        String tahunTanam = txtTahunTanam.getText().trim();
         String komoditas = cmbKomoditasBlok.getSelectedItem() != null ? cmbKomoditasBlok.getSelectedItem().toString() : "Sawit";
+
+        if (kodeBlok.isEmpty()) {
+            kodeBlok = generateKodeBlokOtomatis(komoditas);
+            txtKodeBlok.setText(kodeBlok);
+        }
+
+        try {
+            InputValidator.validateKodeBlok(kodeBlok);
+        } catch (IllegalArgumentException e) {
+            JOptionPane.showMessageDialog(this, 
+                "<html><div style='width: 300px;'><b>Validasi Gagal:</b> " + e.getMessage() + "</div></html>", 
+                "Kesalahan Input", JOptionPane.WARNING_MESSAGE);
+            txtKodeBlok.requestFocus();
+            return;
+        }
+
+        for (BlokLahan b : DataStore.getInstance().getBlokList()) {
+            if (b.getKodeBlok().equalsIgnoreCase(kodeBlok)) {
+                JOptionPane.showMessageDialog(this, 
+                    "<html><div style='width: 300px;'><b>Kode Blok Duplikat:</b> Kode blok '" + kodeBlok + "' sudah digunakan. Gunakan kode lain.</div></html>", 
+                    "Peringatan Duplikasi", JOptionPane.WARNING_MESSAGE);
+                txtKodeBlok.requestFocus();
+                return;
+            }
+        }
 
         if (namaLahan.isEmpty()) {
             JOptionPane.showMessageDialog(this, 
@@ -1710,16 +1761,8 @@ public class AdminFrame extends javax.swing.JFrame {
             return;
         }
 
-        if (tahunTanam.isEmpty() || !tahunTanam.matches("\\d{4}")) {
-            JOptionPane.showMessageDialog(this, 
-                "<html><div style='width: 320px;'><b>Format Salah:</b> Tahun tanam harus berupa 4 digit angka yang valid (contoh: 2018 atau 2020), tidak boleh berupa huruf atau kosong.</div></html>", 
-                "Kesalahan Format Tahun", JOptionPane.WARNING_MESSAGE);
-            txtTahunTanam.requestFocus();
-            return;
-        }
-
         try {
-            BlokLahan blokBaru = new BlokLahan(kodeBlok, namaLahan, luasLahan, komoditas, tahunTanam);
+            BlokLahan blokBaru = new BlokLahan(kodeBlok, namaLahan, luasLahan, komoditas);
             DataStore.getInstance().addBlok(blokBaru);
             JOptionPane.showMessageDialog(this, "Data blok lahan berhasil ditambahkan!");
             refreshBlokTable();
@@ -1738,19 +1781,12 @@ public class AdminFrame extends javax.swing.JFrame {
             String nama = txtNamaLahan.getText().trim();
             double luas = parseUserDecimal(txtLuasLahan.getText().trim());
             String kom = cmbKomoditasBlok.getSelectedItem() == null ? "" : cmbKomoditasBlok.getSelectedItem().toString();
-            String tahun = txtTahunTanam.getText().trim();
-            if (tahun.isEmpty()) tahun = "2018";
-            if (!tahun.matches("\\d{4}")) {
-                JOptionPane.showMessageDialog(this, "Tahun tanam harus berupa 4 digit angka (misal: 2018)!", "Format Salah", JOptionPane.WARNING_MESSAGE);
-                txtTahunTanam.requestFocusInWindow();
-                return;
-            }
             if (nama.isEmpty() || luas <= 0 || kom.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Nama, luas positif, dan komoditas wajib diisi.", "Peringatan", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
-            DataStore.getInstance().updateBlok(new BlokLahan(selectedBlokKode, nama, luas, kom, tahun));
+            DataStore.getInstance().updateBlok(new BlokLahan(selectedBlokKode, nama, luas, kom));
             JOptionPane.showMessageDialog(this, "Data blok lahan berhasil diperbarui!");
             refreshBlokTable();
             resetBlokForm();
@@ -1802,7 +1838,7 @@ public class AdminFrame extends javax.swing.JFrame {
                 resetBlokForm();
                 selectedBlokKode = null;
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Gagal menghapus blok: " + ex.getMessage(), "Error Database", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "<html><div style='width: 320px;'><b>Gagal Menghapus Blok Lahan:</b><br>" + ex.getMessage() + "</div></html>", "Peringatan", JOptionPane.WARNING_MESSAGE);
             }
         }
     }//GEN-LAST:event_btnHapusBlokActionPerformed
@@ -1821,7 +1857,6 @@ public class AdminFrame extends javax.swing.JFrame {
             for (BlokLahan b : DataStore.getInstance().getBlokList()) {
                 if (b.getKodeBlok().equalsIgnoreCase(selectedBlokKode)) {
                     txtLuasLahan.setText(String.valueOf(b.getLuasLahan()));
-                    txtTahunTanam.setText(b.getTahunTanam() == null ? "2018" : b.getTahunTanam());
                     break;
                 }
             }
@@ -1843,21 +1878,45 @@ public class AdminFrame extends javax.swing.JFrame {
         String pass = new String(txtPasswordPgw.getPassword());
         String telp = txtNoTelp.getText().trim();
         String role = cmbRole.getSelectedItem().toString();
+        String detailRole = txtDetailRole.getText().trim();
 
-        if (nama.isEmpty() || user.isEmpty() || pass.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'>Nama lengkap, username, dan password wajib diisi!</div></html>", "Peringatan", JOptionPane.WARNING_MESSAGE);
+        if (nama.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'><b>Validasi Gagal:</b> Nama lengkap pegawai tidak boleh kosong!</div></html>", "Peringatan", JOptionPane.WARNING_MESSAGE);
+            txtNamaPegawai.requestFocus();
             return;
         }
+        if (user.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'><b>Validasi Gagal:</b> Username pegawai tidak boleh kosong!</div></html>", "Peringatan", JOptionPane.WARNING_MESSAGE);
+            txtUsernamePgw.requestFocus();
+            return;
+        }
+        if (pass.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'><b>Validasi Gagal:</b> Password pegawai tidak boleh kosong!</div></html>", "Peringatan", JOptionPane.WARNING_MESSAGE);
+            txtPasswordPgw.requestFocus();
+            return;
+        }
+        if (telp.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'><b>Validasi Gagal:</b> Nomor telepon tidak boleh kosong!</div></html>", "Peringatan", JOptionPane.WARNING_MESSAGE);
+            txtNoTelp.requestFocus();
+            return;
+        }
+        if (detailRole.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'><b>Validasi Gagal:</b> Field " + lblDetailRole.getText().replace(":", "") + " tidak boleh kosong!</div></html>", "Peringatan", JOptionPane.WARNING_MESSAGE);
+            txtDetailRole.requestFocus();
+            return;
+        }
+
         for (Pegawai existing : DataStore.getInstance().getPegawaiList()) {
             if (existing.getUsername().equalsIgnoreCase(user)) {
-                JOptionPane.showMessageDialog(this, "Username sudah digunakan.", "Input Tidak Valid", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Username sudah digunakan. Silakan gunakan username lain.", "Input Tidak Valid", JOptionPane.WARNING_MESSAGE);
+                txtUsernamePgw.requestFocus();
                 return;
             }
         }
 
         String newId = DataStore.getInstance().generatePegawaiId();
-        DataStore.getInstance().addPegawai(new Pegawai(newId, nama, user, pass, telp, role));
-        JOptionPane.showMessageDialog(this, "Pegawai berhasil ditambahkan!");
+        DataStore.getInstance().addPegawai(new Pegawai(newId, nama, user, pass, telp, role, detailRole));
+        JOptionPane.showMessageDialog(this, "Pegawai berhasil ditambahkan dengan ID: " + newId);
         refreshPegawaiTable();
         resetPegawaiForm();
     }//GEN-LAST:event_btnSimpanPgwActionPerformed
@@ -1872,10 +1931,29 @@ public class AdminFrame extends javax.swing.JFrame {
         String pass = new String(txtPasswordPgw.getPassword());
         String telp = txtNoTelp.getText().trim();
         String role = cmbRole.getSelectedItem() == null ? "Petugas" : cmbRole.getSelectedItem().toString();
-        if (nama.isEmpty() || user.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Nama dan username wajib diisi.", "Input Tidak Valid", JOptionPane.WARNING_MESSAGE);
+        String detailRole = txtDetailRole.getText().trim();
+
+        if (nama.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'><b>Validasi Gagal:</b> Nama lengkap pegawai tidak boleh kosong!</div></html>", "Peringatan", JOptionPane.WARNING_MESSAGE);
+            txtNamaPegawai.requestFocus();
             return;
         }
+        if (user.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'><b>Validasi Gagal:</b> Username pegawai tidak boleh kosong!</div></html>", "Peringatan", JOptionPane.WARNING_MESSAGE);
+            txtUsernamePgw.requestFocus();
+            return;
+        }
+        if (telp.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'><b>Validasi Gagal:</b> Nomor telepon tidak boleh kosong!</div></html>", "Peringatan", JOptionPane.WARNING_MESSAGE);
+            txtNoTelp.requestFocus();
+            return;
+        }
+        if (detailRole.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'><b>Validasi Gagal:</b> Field " + lblDetailRole.getText().replace(":", "") + " tidak boleh kosong!</div></html>", "Peringatan", JOptionPane.WARNING_MESSAGE);
+            txtDetailRole.requestFocus();
+            return;
+        }
+
         for (Pegawai existing : DataStore.getInstance().getPegawaiList()) {
             if (!existing.getIdPegawai().equalsIgnoreCase(selectedPegawaiId) && existing.getUsername().equalsIgnoreCase(user)) {
                 JOptionPane.showMessageDialog(this, "Username sudah digunakan.", "Input Tidak Valid", JOptionPane.WARNING_MESSAGE);
@@ -1885,7 +1963,7 @@ public class AdminFrame extends javax.swing.JFrame {
         Pegawai selected = DataStore.getInstance().findPegawaiById(selectedPegawaiId);
         if (selected == null) return;
         if (pass.isEmpty()) pass = selected.getPassword();
-        DataStore.getInstance().updatePegawai(new Pegawai(selectedPegawaiId, nama, user, pass, telp, role));
+        DataStore.getInstance().updatePegawai(new Pegawai(selectedPegawaiId, nama, user, pass, telp, role, detailRole));
         JOptionPane.showMessageDialog(this, "Data pegawai berhasil diperbarui!");
         refreshPegawaiTable();
         resetPegawaiForm();
@@ -1908,7 +1986,7 @@ public class AdminFrame extends javax.swing.JFrame {
                 refreshPegawaiTable();
                 resetPegawaiForm();
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Gagal menghapus pegawai: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "<html><div style='width: 320px;'><b>Gagal Menghapus Pegawai:</b><br>" + ex.getMessage() + "</div></html>", "Peringatan", JOptionPane.WARNING_MESSAGE);
             }
         }
     }//GEN-LAST:event_btnHapusPgwActionPerformed
@@ -1990,7 +2068,7 @@ public class AdminFrame extends javax.swing.JFrame {
                 refreshRekapTable();
                 resetPanenForm();
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Gagal menghapus panen: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "<html><div style='width: 320px;'><b>Gagal Menghapus Panen:</b><br>" + ex.getMessage() + "</div></html>", "Peringatan", JOptionPane.WARNING_MESSAGE);
             }
         }
     }//GEN-LAST:event_btnHapusActionPerformed
@@ -2017,21 +2095,17 @@ public class AdminFrame extends javax.swing.JFrame {
 
             for (Panen p : DataStore.getInstance().getPanenList()) {
                 if (p.getIdPanen().equalsIgnoreCase(selectedPanenId)) {
-                    txtInput1.setText(String.valueOf(p.getInput1()));
-                    txtInput2.setText(String.valueOf(p.getInput2()));
-                    txtTidakLayak.setText(String.valueOf(p.getTidakLayak()));
+                    txtInput1.setText(p.getInput1() % 1 == 0 ? String.valueOf((long) p.getInput1()) : String.valueOf(p.getInput1()));
+                    txtInput2.setText(p.getInput2() % 1 == 0 ? String.valueOf((long) p.getInput2()) : String.valueOf(p.getInput2()));
+                    txtTidakLayak.setText(p.getTidakLayak() % 1 == 0 ? String.valueOf((long) p.getTidakLayak()) : String.valueOf(p.getTidakLayak()));
+                    txtTahunTanamPanen.setText(p.getTahunTanam() != null ? p.getTahunTanam() : "2018");
                     break;
                 }
             }
         }
     }//GEN-LAST:event_tblPanenMouseClicked
 
-    private void btnLihatRiwayatActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLihatRiwayatActionPerformed
-        RiwayatPerubahanDialog dialog = new RiwayatPerubahanDialog(this, true);
-        dialog.setVisible(true);
-    }//GEN-LAST:event_btnLihatRiwayatActionPerformed
-
-        private void autoUpdateMetrikPeriode() {
+    private void autoUpdateMetrikPeriode() {
         String tglAwal = txtEvalAwal.getText().trim();
         String tglAkhir = txtEvalAkhir.getText().trim();
         if (InputValidator.isValidDate(tglAwal) && InputValidator.isValidDate(tglAkhir) && InputValidator.isValidDateRange(tglAwal, tglAkhir)) {
@@ -2060,6 +2134,12 @@ public class AdminFrame extends javax.swing.JFrame {
         } else if ("Bulan Ini".equalsIgnoreCase(mode)) {
             LocalDate now = LocalDate.now();
             txtTglAwal.setText(now.withDayOfMonth(1).toString());
+            txtTglAkhir.setText(now.toString());
+            txtTglAwal.setEnabled(false);
+            txtTglAkhir.setEnabled(false);
+        } else if ("Tahun Ini".equalsIgnoreCase(mode)) {
+            LocalDate now = LocalDate.now();
+            txtTglAwal.setText(now.withDayOfYear(1).toString());
             txtTglAkhir.setText(now.toString());
             txtTglAwal.setEnabled(false);
             txtTglAkhir.setEnabled(false);
@@ -2096,6 +2176,7 @@ public class AdminFrame extends javax.swing.JFrame {
         model.setRowCount(0);
         List<Panen> list = DataStore.getInstance().getPanenList();
         double grandTotal = 0;
+        double totalTidakLayak = 0;
         int count = 0, baik = 0, cukup = 0, kurang = 0;
 
         for (Panen p : list) {
@@ -2108,6 +2189,7 @@ public class AdminFrame extends javax.swing.JFrame {
 
             if (matchKom && matchTgl && matchMutu && matchBlok) {
                 grandTotal += p.getTotalPanen();
+                totalTidakLayak += p.getTidakLayak();
                 count++;
                 if ("Baik".equalsIgnoreCase(p.getKualitas())) baik++;
                 else if ("Cukup".equalsIgnoreCase(p.getKualitas())) cukup++;
@@ -2124,7 +2206,8 @@ public class AdminFrame extends javax.swing.JFrame {
             }
         }
 
-        lblTotalRekap.setText("<html><b>Ringkasan:</b> " + count + " Transaksi &nbsp;|&nbsp; <b>Total:</b> " + df.format(grandTotal) + " Kg &nbsp;|&nbsp; <b>Mutu:</b> <font color='#16a34a'>" + baik + " Baik</font>, <font color='#d97706'>" + cukup + " Cukup</font>, <font color='#dc2626'>" + kurang + " Kurang</font></html>");
+        double persenReject = grandTotal > 0 ? (totalTidakLayak / grandTotal) * 100.0 : 0.0;
+        lblTotalRekap.setText("<html><b>Ringkasan:</b> " + count + " Transaksi &nbsp;|&nbsp; <b>Total Panen:</b> " + df.format(grandTotal) + " Kg &nbsp;|&nbsp; <b>Tidak Layak:</b> <font color='#dc2626'>" + df.format(totalTidakLayak) + " Kg (" + df.format(persenReject) + "%)</font> &nbsp;|&nbsp; <b>Mutu:</b> <font color='#16a34a'>" + baik + " Baik</font>, <font color='#d97706'>" + cukup + " Cukup</font>, <font color='#dc2626'>" + kurang + " Kurang</font></html>");
 
         if (count == 0 && evt != null) {
             JOptionPane.showMessageDialog(this,
@@ -2154,11 +2237,18 @@ public class AdminFrame extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'>Masukkan rentang tanggal valid dengan tanggal awal sebelum atau sama dengan tanggal akhir.</div></html>", "Rentang Tanggal Tidak Valid", JOptionPane.WARNING_MESSAGE);
             return;
         }
+
         double[] metrics = DataStore.getInstance().calculateMetrics(tglAwal, tglAkhir);
 
         lblTotalBulan.setText("<html>" + df.format(metrics[0]) + " Kg<br><span style=\'font-size:10px;font-weight:normal;color:#64748b;\'>Rata-rata: " + df.format(metrics[2]) + " Kg/bln</span></html>");
         lblPersenTidakLayak.setText(df.format(metrics[1]) + "%");
-        cmbStatusEval.setSelectedItem("Proses");
+        
+        String defaultStatus = (metrics[0] > 0 && metrics[1] <= 4.0) ? "Selesai" : "Proses";
+        cmbStatusEval.setSelectedItem(defaultStatus);
+
+        if (metrics[0] <= 0) {
+            JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'>Data hasil panen pada rentang periode ini belum tersedia.</div></html>", "Informasi", JOptionPane.INFORMATION_MESSAGE);
+        }
     }//GEN-LAST:event_btnHitungMetrikActionPerformed
 
     private void btnSimpanEvalActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSimpanEvalActionPerformed
@@ -2168,12 +2258,27 @@ public class AdminFrame extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'>Masukkan rentang tanggal valid dengan tanggal awal sebelum atau sama dengan tanggal akhir.</div></html>", "Rentang Tanggal Tidak Valid", JOptionPane.WARNING_MESSAGE);
             return;
         }
+
+        for (Evaluasi existingEv : DataStore.getInstance().getEvaluasiList()) {
+            if (existingEv.getTglAwal().equals(tglAwal) && existingEv.getTglAkhir().equals(tglAkhir)) {
+                JOptionPane.showMessageDialog(this,
+                    "<html><div style='width: 320px;'><b>Evaluasi Duplikat:</b> Evaluasi untuk rentang periode <b>"
+                    + tglAwal + "</b> s.d. <b>" + tglAkhir + "</b> sudah ada dalam sistem dengan ID: <b>"
+                    + existingEv.getIdEval() + "</b>.<br><br>Silakan perbarui data yang ada jika ingin mengubah arahan atau status evaluasi.</div></html>",
+                    "Peringatan Duplikasi", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+        }
+
         double[] metrics = DataStore.getInstance().calculateMetrics(tglAwal, tglAkhir);
 
-        String status = cmbStatusEval.getSelectedItem().toString();
+        String status = cmbStatusEval.getSelectedItem() != null ? cmbStatusEval.getSelectedItem().toString() : "Proses";
+        if (status.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Status evaluasi wajib dipilih (Proses atau Selesai)!", "Validasi Gagal", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
         String catatan = txtCatatanTindakLanjut.getText().trim();
 
-        if (status.isEmpty()) status = "Selesai";
         String newId = DataStore.getInstance().generateEvalId();
 
         Evaluasi ev = new Evaluasi(newId, tglAwal, tglAkhir, metrics[0], metrics[1], status, catatan, "-");
@@ -2203,7 +2308,11 @@ public class AdminFrame extends javax.swing.JFrame {
         if (confirm != JOptionPane.YES_OPTION) return;
 
         double[] metrics = DataStore.getInstance().calculateMetrics(tglAwal, tglAkhir);
-        String status = cmbStatusEval.getSelectedItem().toString();
+        String status = cmbStatusEval.getSelectedItem() != null ? cmbStatusEval.getSelectedItem().toString() : "Proses";
+        if (status.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Status evaluasi wajib dipilih (Proses atau Selesai)!", "Validasi Gagal", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
         String catatan = txtCatatanTindakLanjut.getText().trim();
 
         Evaluasi existing = null;
@@ -2239,7 +2348,7 @@ public class AdminFrame extends javax.swing.JFrame {
                 refreshEvalTable();
                 resetEvalForm();
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Gagal menghapus evaluasi: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "<html><div style='width: 320px;'><b>Gagal Menghapus Evaluasi:</b><br>" + ex.getMessage() + "</div></html>", "Peringatan", JOptionPane.WARNING_MESSAGE);
             }
         }
     }//GEN-LAST:event_btnHapusEvalActionPerformed
@@ -2259,6 +2368,9 @@ public class AdminFrame extends javax.swing.JFrame {
             lblPersenTidakLayak.setText(df.format(ev.getPersenTidakLayak()) + "%");
             cmbStatusEval.setSelectedItem("Selesai".equalsIgnoreCase(ev.getStatus()) ? "Selesai" : "Proses");
             txtCatatanTindakLanjut.setText(ev.getCatatanDireksi());
+            if (txtCatatanPegawaiView != null) {
+                txtCatatanPegawaiView.setText(ev.getCatatanPegawai() == null || "-".equals(ev.getCatatanPegawai()) ? "(Belum ada laporan tindak lanjut dari petugas)" : ev.getCatatanPegawai());
+            }
         }
     }//GEN-LAST:event_tblEvaluasiMouseClicked
 
@@ -2286,7 +2398,6 @@ public class AdminFrame extends javax.swing.JFrame {
     private javax.swing.JButton btnHapusEval;
     private javax.swing.JButton btnHapusPgw;
     private javax.swing.JButton btnHitungMetrik;
-    private javax.swing.JButton btnLihatRiwayat;
     private javax.swing.JButton btnLogout;
     private javax.swing.JButton btnPerbarui;
     private javax.swing.JButton btnPerbaruiBlok;
@@ -2313,6 +2424,7 @@ public class AdminFrame extends javax.swing.JFrame {
     private javax.swing.JComboBox<String> cmbStatusEval;
     private javax.swing.JLabel lblBlok;
     private javax.swing.JLabel lblCatatan;
+    private javax.swing.JLabel lblCatatanPegawaiView;
     private javax.swing.JLabel lblDaftarBlok;
     private javax.swing.JLabel lblDaftarEval;
     private javax.swing.JLabel lblDaftarPanen;
@@ -2339,7 +2451,7 @@ public class AdminFrame extends javax.swing.JFrame {
     private javax.swing.JLabel lblPersenTidakLayak;
     private javax.swing.JLabel lblRole;
     private javax.swing.JLabel lblStatusEval;
-    private javax.swing.JLabel lblTahunTanam;
+    private javax.swing.JLabel lblTahunTanamPanen;
     private javax.swing.JLabel lblTanggal;
     private javax.swing.JLabel lblTglAkhir;
     private javax.swing.JLabel lblTglAwal;
@@ -2371,6 +2483,7 @@ public class AdminFrame extends javax.swing.JFrame {
     private javax.swing.JRadioButton rbSawit;
     private javax.swing.JScrollPane scrollBlok;
     private javax.swing.JScrollPane scrollCatatan;
+    private javax.swing.JScrollPane scrollCatatanPegawaiView;
     private javax.swing.JScrollPane scrollEval;
     private javax.swing.JScrollPane scrollPanen;
     private javax.swing.JScrollPane scrollPegawai;
@@ -2386,6 +2499,7 @@ public class AdminFrame extends javax.swing.JFrame {
     private javax.swing.JTable tblPanen;
     private javax.swing.JTable tblPegawai;
     private javax.swing.JTable tblRekap;
+    private javax.swing.JTextArea txtCatatanPegawaiView;
     private javax.swing.JTextArea txtCatatanTindakLanjut;
     private javax.swing.JTextField txtDetailRole;
     private javax.swing.JTextField txtEvalAkhir;
@@ -2398,7 +2512,7 @@ public class AdminFrame extends javax.swing.JFrame {
     private javax.swing.JTextField txtNamaPegawai;
     private javax.swing.JTextField txtNoTelp;
     private javax.swing.JPasswordField txtPasswordPgw;
-    private javax.swing.JTextField txtTahunTanam;
+    private javax.swing.JTextField txtTahunTanamPanen;
     private javax.swing.JTextField txtTanggalPanen;
     private javax.swing.JTextField txtTglAkhir;
     private javax.swing.JTextField txtTglAwal;

@@ -28,7 +28,6 @@ public class LaporanTindakLanjutDialog extends JDialog {
     private boolean saved = false;
 
     private JTextArea txtCatatanLapangan;
-    private JComboBox<String> cmbStatusLaporan;
 
     public LaporanTindakLanjutDialog(Frame parent, Evaluasi evaluasi) {
         super(parent, "Laporan Tindak Lanjut Evaluasi Lapangan", true);
@@ -115,19 +114,10 @@ public class LaporanTindakLanjutDialog extends JDialog {
         JScrollPane scrollCatatan = new JScrollPane(txtCatatanLapangan);
         scrollCatatan.setBorder(BorderFactory.createLineBorder(new Color(203, 213, 225), 1));
         pnlBody.add(scrollCatatan);
-        pnlBody.add(Box.createVerticalStrut(12));
+        pnlBody.add(Box.createVerticalStrut(10));
 
-        JLabel lblStatus = new JLabel("Status Pelaksanaan Evaluasi:");
-        lblStatus.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lblStatus.setForeground(new Color(30, 41, 59));
-        pnlBody.add(lblStatus);
-        pnlBody.add(Box.createVerticalStrut(6));
-
-        cmbStatusLaporan = new JComboBox<>(new String[]{"Selesai", "Proses"});
-        cmbStatusLaporan.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        cmbStatusLaporan.setSelectedItem("Selesai");
-        cmbStatusLaporan.setMaximumSize(new Dimension(Short.MAX_VALUE, 34));
-        pnlBody.add(cmbStatusLaporan);
+        JLabel lblStatusInfo = new JLabel("<html><span style='color:#64748b; font-size:11px;'>* Status evaluasi tetap <b>" + evaluasi.getStatus() + "</b>. Status hanya dapat diubah oleh Admin/Direksi setelah verifikasi.</span></html>");
+        pnlBody.add(lblStatusInfo);
 
         add(pnlBody, BorderLayout.CENTER);
 
@@ -150,13 +140,11 @@ public class LaporanTindakLanjutDialog extends JDialog {
                     "Peringatan", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            String status = cmbStatusLaporan.getSelectedItem().toString();
             evaluasi.setCatatanPegawai(catatan);
-            evaluasi.setStatus(status);
             DataStore.getInstance().updateEvaluasi(evaluasi);
             saved = true;
             JOptionPane.showMessageDialog(this,
-                "<html><div style='width: 300px;'>Laporan tindak lanjut berhasil disimpan dan diperbarui di database! Status: <b>" + status + "</b></div></html>",
+                "<html><div style='width: 300px;'>Laporan tindak lanjut berhasil dikirimkan ke Admin & Direksi untuk diverifikasi!</div></html>",
                 "Laporan Terkirim", JOptionPane.INFORMATION_MESSAGE);
             dispose();
         });

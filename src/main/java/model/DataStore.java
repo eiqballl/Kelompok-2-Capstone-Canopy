@@ -3,6 +3,7 @@ package model;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -45,9 +46,9 @@ public class DataStore {
         pegawaiList.add(new Pegawai("U003", "Budi Santoso", "budi.direksi", "direksi123", "081234560003", "Direksi"));
         pegawaiList.add(new Pegawai("U006", "Andi Saputra", "andi.petugas", "petugas123", "081234560006", "Petugas"));
 
-        addPanenInternal(new Panen("PN001", "2026-10-25", "SW001 - Blok Sawit A01", "Sawit", 100, 250, 1250.0, 45.0, "Baik"));
-        addPanenInternal(new Panen("PN002", "2026-10-26", "KR001 - Blok Karet B01", "Karet", 680, 28, 680.0, 20.0, "Cukup"));
-        addPanenInternal(new Panen("PN003", "2026-10-27", "SW002 - Blok Sawit A02", "Sawit", 80, 180, 980.0, 35.0, "Baik"));
+        addPanenInternal(new Panen("PN001", "2026-10-25", "SW001 - Blok Sawit A01", "Sawit", 100, 250, 1250.0, 45.0, "Baik", "2018"));
+        addPanenInternal(new Panen("PN002", "2026-10-26", "KR001 - Blok Karet B01", "Karet", 680, 28, 680.0, 20.0, "Cukup", "2015"));
+        addPanenInternal(new Panen("PN003", "2026-10-27", "SW002 - Blok Sawit A02", "Sawit", 80, 180, 980.0, 35.0, "Baik", "2019"));
 
         evaluasiList.add(new Evaluasi("EV001", "2026-10-01", "2026-10-31", 2910.0, 3.44, "Selesai",
             "Pertahankan produktivitas dan cek sanitasi pokok.",
@@ -106,21 +107,16 @@ public class DataStore {
             List<Evaluasi> tempEvaluasi = new ArrayList<>();
             List<Riwayat> tempRiwayat = new ArrayList<>();
 
-            ensureBlokLahanTahunTanam(c);
+            ensureProdukPanenTahunTanam(c);
             Statement st = c.createStatement();
 
-            ResultSet rsBlok = st.executeQuery("SELECT kode_blok_lahan, nama_blok_lahan, luas_blok_lahan, komoditas, tahun_tanam FROM blok_lahan");
+            ResultSet rsBlok = st.executeQuery("SELECT kode_blok_lahan, nama_blok_lahan, luas_blok_lahan, komoditas FROM blok_lahan");
             while (rsBlok.next()) {
                 String kode = rsBlok.getString("kode_blok_lahan");
                 String nama = rsBlok.getString("nama_blok_lahan");
                 double luas = rsBlok.getDouble("luas_blok_lahan");
                 String kom = rsBlok.getString("komoditas");
-                String thn = "2018";
-                try {
-                    thn = rsBlok.getString("tahun_tanam");
-                    if (thn == null || thn.trim().isEmpty()) thn = "2018";
-                } catch (Exception ignored) {}
-                tempBlok.add(new BlokLahan(kode, nama, luas, kom, thn));
+                tempBlok.add(new BlokLahan(kode, nama, luas, kom));
             }
             rsBlok.close();
 
@@ -177,7 +173,12 @@ public class DataStore {
                 double tot = rsPanen.getDouble("total_jumlah_panen");
                 double rej = rsPanen.getDouble("hasil_panen_tidak_layak");
                 String qual = rsPanen.getString("kualitas_panen");
-                tempPanen.add(new Panen(idP, tgl, blokStr, kom, in1, in2, tot, rej, qual));
+                String thnTanam = "2018";
+                try {
+                    thnTanam = rsPanen.getString("tahun_tanam");
+                    if (thnTanam == null || thnTanam.trim().isEmpty()) thnTanam = "2018";
+                } catch (Exception ignored) {}
+                tempPanen.add(new Panen(idP, tgl, blokStr, kom, in1, in2, tot, rej, qual, thnTanam));
                 try {
                     int num = Integer.parseInt(idP.replaceAll("\\D+", ""));
                     if (num >= panenCounter) panenCounter = num + 1;
@@ -282,20 +283,17 @@ public class DataStore {
             Connection c = Koneksi.getKoneksi();
             if (c != null) {
                 ensureRiwayatTable(c);
-                ensureBlokLahanTahunTanam(c);
                 PreparedStatement ps = c.prepareStatement(
-                    "INSERT INTO blok_lahan (kode_blok_lahan, nama_blok_lahan, luas_blok_lahan, komoditas, tahun_tanam) VALUES (?, ?, ?, ?, ?) " +
-                    "ON DUPLICATE KEY UPDATE nama_blok_lahan=?, luas_blok_lahan=?, komoditas=?, tahun_tanam=?"
+                    "INSERT INTO blok_lahan (kode_blok_lahan, nama_blok_lahan, luas_blok_lahan, komoditas) VALUES (?, ?, ?, ?) " +
+                    "ON DUPLICATE KEY UPDATE nama_blok_lahan=?, luas_blok_lahan=?, komoditas=?"
                 );
                 ps.setString(1, b.getKodeBlok());
                 ps.setString(2, b.getNamaLahan());
                 ps.setDouble(3, b.getLuasLahan());
                 ps.setString(4, b.getKomoditas());
-                ps.setString(5, b.getTahunTanam());
-                ps.setString(6, b.getNamaLahan());
-                ps.setDouble(7, b.getLuasLahan());
-                ps.setString(8, b.getKomoditas());
-                ps.setString(9, b.getTahunTanam());
+                ps.setString(5, b.getNamaLahan());
+                ps.setDouble(6, b.getLuasLahan());
+                ps.setString(7, b.getKomoditas());
                 ps.executeUpdate();
                 ps.close();
             }
@@ -310,15 +308,13 @@ public class DataStore {
                 try {
                     Connection c = Koneksi.getKoneksi();
                     if (c != null) {
-                        ensureBlokLahanTahunTanam(c);
                         PreparedStatement ps = c.prepareStatement(
-                            "UPDATE blok_lahan SET nama_blok_lahan=?, luas_blok_lahan=?, komoditas=?, tahun_tanam=? WHERE kode_blok_lahan=?"
+                            "UPDATE blok_lahan SET nama_blok_lahan=?, luas_blok_lahan=?, komoditas=? WHERE kode_blok_lahan=?"
                         );
                         ps.setString(1, b.getNamaLahan());
                         ps.setDouble(2, b.getLuasLahan());
                         ps.setString(3, b.getKomoditas());
-                        ps.setString(4, b.getTahunTanam());
-                        ps.setString(5, b.getKodeBlok());
+                        ps.setString(4, b.getKodeBlok());
                         ps.executeUpdate();
                         ps.close();
                     }
@@ -330,15 +326,53 @@ public class DataStore {
         }
         return false;
     }
-    public synchronized boolean deleteBlok(String kode) throws Exception {
-        Connection c = Koneksi.getKoneksi();
-        if (c != null) {
-            try (PreparedStatement ps = c.prepareStatement("DELETE FROM blok_lahan WHERE kode_blok_lahan = ?")) {
-                ps.setString(1, kode);
-                ps.executeUpdate();
+    public synchronized String generateBlokKode(String komoditas) {
+        String prefix = (komoditas != null && komoditas.equalsIgnoreCase("Karet")) ? "KR" : "SW";
+        int maxNum = 0;
+        for (BlokLahan b : blokList) {
+            String kode = b.getKodeBlok();
+            if (kode != null && kode.toUpperCase().startsWith(prefix)) {
+                try {
+                    int num = Integer.parseInt(kode.substring(prefix.length()));
+                    if (num > maxNum) maxNum = num;
+                } catch (NumberFormatException ignored) {}
             }
         }
-        return blokList.removeIf(b -> b.getKodeBlok().equalsIgnoreCase(kode));
+        return String.format("%s%03d", prefix, maxNum + 1);
+    }
+
+    public synchronized boolean deleteBlok(String kode) throws Exception {
+        if (kode == null || kode.trim().isEmpty()) {
+            throw new IllegalArgumentException("Kode blok lahan tidak valid.");
+        }
+        String cleanKode = kode.trim();
+        for (Panen p : panenList) {
+            if (cleanKode.equalsIgnoreCase(p.getKodeBlok()) || 
+                (p.getBlokLahan() != null && p.getBlokLahan().toUpperCase().startsWith(cleanKode.toUpperCase()))) {
+                throw new IllegalStateException("Blok lahan '" + cleanKode + "' tidak dapat dihapus karena masih tersangkut pada data aktivitas panen (terdapat data panen " + p.getIdPanen() + " di blok ini). Harap hapus atau pindahkan data panen terkait terlebih dahulu.");
+            }
+        }
+        Connection c = Koneksi.getKoneksi();
+        if (c != null) {
+            try (PreparedStatement checkPs = c.prepareStatement("SELECT id_panen FROM aktivitas_panen WHERE kode_blok_lahan = ? LIMIT 1")) {
+                checkPs.setString(1, cleanKode);
+                try (ResultSet rs = checkPs.executeQuery()) {
+                    if (rs.next()) {
+                        throw new IllegalStateException("Blok lahan '" + cleanKode + "' tidak dapat dihapus karena masih tersangkut pada data aktivitas panen di database (ID Panen: " + rs.getString("id_panen") + "). Harap hapus data panen terkait terlebih dahulu.");
+                    }
+                }
+            }
+            try (PreparedStatement ps = c.prepareStatement("DELETE FROM blok_lahan WHERE kode_blok_lahan = ?")) {
+                ps.setString(1, cleanKode);
+                ps.executeUpdate();
+            } catch (SQLException sqle) {
+                if (sqle.getErrorCode() == 1451 || (sqle.getMessage() != null && sqle.getMessage().toLowerCase().contains("foreign key"))) {
+                    throw new IllegalStateException("Blok lahan '" + cleanKode + "' tidak dapat dihapus karena masih tersangkut pada relasi data lain di database.");
+                }
+                throw sqle;
+            }
+        }
+        return blokList.removeIf(b -> b.getKodeBlok().equalsIgnoreCase(cleanKode));
     }
 
     public synchronized List<Pegawai> getPegawaiList() { return new ArrayList<>(pegawaiList); }
@@ -440,26 +474,45 @@ public class DataStore {
     }
 
     public synchronized boolean deletePegawai(String idOrUser) throws Exception {
+        if (idOrUser == null || idOrUser.trim().isEmpty()) {
+            throw new IllegalArgumentException("ID atau username pegawai tidak valid.");
+        }
+        String cleanIdOrUser = idOrUser.trim();
+        String activeUser = getCurrentUser();
+        if (activeUser != null && activeUser.equalsIgnoreCase(cleanIdOrUser)) {
+            throw new IllegalStateException("Tidak dapat menghapus akun pegawai ('" + cleanIdOrUser + "') yang saat ini sedang aktif digunakan untuk login.");
+        }
+        String resolvedId = cleanIdOrUser;
+        for (Pegawai p : pegawaiList) {
+            if (p.getIdPegawai().equalsIgnoreCase(cleanIdOrUser) || p.getUsername().equalsIgnoreCase(cleanIdOrUser)) {
+                resolvedId = p.getIdPegawai();
+                if (activeUser != null && p.getUsername().equalsIgnoreCase(activeUser)) {
+                    throw new IllegalStateException("Tidak dapat menghapus akun pegawai ('" + p.getNamaPegawai() + "') yang sedang aktif digunakan untuk login.");
+                }
+                break;
+            }
+        }
         Connection c = Koneksi.getKoneksi();
         if (c != null) {
+            try (PreparedStatement checkPs = c.prepareStatement("SELECT id_panen FROM aktivitas_panen WHERE id_user = ? LIMIT 1")) {
+                checkPs.setString(1, resolvedId);
+                try (ResultSet rs = checkPs.executeQuery()) {
+                    if (rs.next()) {
+                        throw new IllegalStateException("Pegawai '" + cleanIdOrUser + "' tidak dapat dihapus karena masih tersangkut pada data pencatatan aktivitas panen (ID Panen: " + rs.getString("id_panen") + ").");
+                    }
+                }
+            }
+            try (PreparedStatement checkBlok = c.prepareStatement("SELECT kode_blok_lahan FROM blok_lahan WHERE id_user = ? LIMIT 1")) {
+                checkBlok.setString(1, resolvedId);
+                try (ResultSet rs = checkBlok.executeQuery()) {
+                    if (rs.next()) {
+                        throw new IllegalStateException("Pegawai '" + cleanIdOrUser + "' tidak dapat dihapus karena masih tersangkut sebagai pengelola blok lahan (" + rs.getString("kode_blok_lahan") + ").");
+                    }
+                }
+            }
             boolean oldAuto = c.getAutoCommit();
             try {
                 c.setAutoCommit(false);
-                String resolvedId = idOrUser;
-                for (Pegawai p : pegawaiList) {
-                    if (p.getIdPegawai().equalsIgnoreCase(idOrUser) || p.getUsername().equalsIgnoreCase(idOrUser)) {
-                        resolvedId = p.getIdPegawai();
-                        break;
-                    }
-                }
-                try (PreparedStatement ps = c.prepareStatement("UPDATE aktivitas_panen SET id_user = NULL WHERE id_user = ?")) {
-                    ps.setString(1, resolvedId);
-                    ps.executeUpdate();
-                }
-                try (PreparedStatement ps = c.prepareStatement("UPDATE blok_lahan SET id_user = NULL WHERE id_user = ?")) {
-                    ps.setString(1, resolvedId);
-                    ps.executeUpdate();
-                }
                 for (String t : new String[]{"admin", "direksi", "petugas"}) {
                     try (PreparedStatement ps = c.prepareStatement("DELETE FROM " + t + " WHERE id_user = ?")) {
                         ps.setString(1, resolvedId);
@@ -468,10 +521,16 @@ public class DataStore {
                 }
                 try (PreparedStatement ps = c.prepareStatement("DELETE FROM user WHERE id_user = ? OR username = ?")) {
                     ps.setString(1, resolvedId);
-                    ps.setString(2, idOrUser);
+                    ps.setString(2, cleanIdOrUser);
                     ps.executeUpdate();
                 }
                 c.commit();
+            } catch (SQLException sqle) {
+                c.rollback();
+                if (sqle.getErrorCode() == 1451 || (sqle.getMessage() != null && sqle.getMessage().toLowerCase().contains("foreign key"))) {
+                    throw new IllegalStateException("Pegawai '" + cleanIdOrUser + "' tidak dapat dihapus karena masih tersangkut dengan data transaksi lain di sistem.");
+                }
+                throw sqle;
             } catch (Exception ex) {
                 c.rollback();
                 throw ex;
@@ -479,7 +538,7 @@ public class DataStore {
                 c.setAutoCommit(oldAuto);
             }
         }
-        return pegawaiList.removeIf(p -> p.getIdPegawai().equalsIgnoreCase(idOrUser) || p.getUsername().equalsIgnoreCase(idOrUser));
+        return pegawaiList.removeIf(p -> p.getIdPegawai().equalsIgnoreCase(cleanIdOrUser) || p.getUsername().equalsIgnoreCase(cleanIdOrUser));
     }
 
     public synchronized List<Panen> getPanenList() { return new ArrayList<>(panenList); }
@@ -548,10 +607,10 @@ public class DataStore {
             ps.setString(1, idProduk);
             ps.setString(2, p.getIdPanen());
             ps.setString(3, p.getKomoditas());
-            ps.setString(4, null);
+            ps.setString(4, p.getTahunTanam());
             ps.setString(5, p.getIdPanen());
             ps.setString(6, p.getKomoditas());
-            ps.setString(7, null);
+            ps.setString(7, p.getTahunTanam());
             ps.executeUpdate();
         }
         try (PreparedStatement ps = c.prepareStatement("DELETE FROM sawit WHERE id_produk = ?")) {
@@ -664,6 +723,12 @@ public class DataStore {
                     ps.executeUpdate();
                 }
                 c.commit();
+            } catch (SQLException sqle) {
+                c.rollback();
+                if (sqle.getErrorCode() == 1451 || (sqle.getMessage() != null && sqle.getMessage().toLowerCase().contains("foreign key"))) {
+                    throw new IllegalStateException("Data panen '" + idPanen + "' tidak dapat dihapus karena masih tersangkut dengan relasi data transaksi lain.");
+                }
+                throw sqle;
             } catch (Exception ex) {
                 c.rollback();
                 throw ex;
@@ -819,6 +884,12 @@ public class DataStore {
                     ps.executeUpdate();
                 }
                 c.commit();
+            } catch (SQLException sqle) {
+                c.rollback();
+                if (sqle.getErrorCode() == 1451 || (sqle.getMessage() != null && sqle.getMessage().toLowerCase().contains("foreign key"))) {
+                    throw new IllegalStateException("Data evaluasi '" + idEval + "' tidak dapat dihapus karena masih tersangkut dengan relasi data transaksi lain.");
+                }
+                throw sqle;
             } catch (Exception ex) {
                 c.rollback();
                 throw ex;
@@ -844,19 +915,9 @@ public class DataStore {
         } catch (Exception ignored) {}
     }
 
-    private static void ensureBlokLahanTahunTanam(Connection c) {
+    private static void ensureProdukPanenTahunTanam(Connection c) {
         try (Statement st = c.createStatement()) {
-            st.execute("ALTER TABLE blok_lahan ADD COLUMN tahun_tanam VARCHAR(4) DEFAULT '2018'");
-        } catch (Exception ignored) {}
-        try (Statement st = c.createStatement()) {
-            st.executeUpdate(
-                "UPDATE blok_lahan bl " +
-                "JOIN aktivitas_panen ap ON ap.kode_blok_lahan = bl.kode_blok_lahan " +
-                "JOIN produk_panen pp ON pp.aktivitas_panen_id_panen = ap.id_panen " +
-                "SET bl.tahun_tanam = pp.tahun_tanam " +
-                "WHERE (bl.tahun_tanam IS NULL OR bl.tahun_tanam = '' OR bl.tahun_tanam = '2018') " +
-                "  AND pp.tahun_tanam IS NOT NULL AND pp.tahun_tanam <> ''"
-            );
+            st.execute("ALTER TABLE produk_panen ADD COLUMN tahun_tanam VARCHAR(4) DEFAULT '2018'");
         } catch (Exception ignored) {}
     }
 

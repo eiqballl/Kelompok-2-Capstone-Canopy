@@ -10,9 +10,10 @@ public class Panen implements KalkulasiPanen {
     private double totalPanen;
     private double tidakLayak;
     private String kualitas;
+    private String tahunTanam;
 
     public Panen(String idPanen, String tanggal, String blokLahan, String komoditas,
-                 double input1, double input2, double totalPanen, double tidakLayak, String kualitas) {
+                 double input1, double input2, double totalPanen, double tidakLayak, String kualitas, String tahunTanam) {
         this.idPanen = idPanen;
         this.tanggal = tanggal;
         this.blokLahan = blokLahan;
@@ -22,6 +23,12 @@ public class Panen implements KalkulasiPanen {
         this.totalPanen = totalPanen;
         this.tidakLayak = tidakLayak;
         this.kualitas = kualitas;
+        this.tahunTanam = (tahunTanam == null || tahunTanam.trim().isEmpty()) ? "2018" : tahunTanam.trim();
+    }
+
+    public Panen(String idPanen, String tanggal, String blokLahan, String komoditas,
+                 double input1, double input2, double totalPanen, double tidakLayak, String kualitas) {
+        this(idPanen, tanggal, blokLahan, komoditas, input1, input2, totalPanen, tidakLayak, kualitas, "2018");
     }
 
     public String getIdPanen() { return idPanen; }
@@ -56,6 +63,9 @@ public class Panen implements KalkulasiPanen {
 
     public String getKualitas() { return kualitas; }
     public void setKualitas(String kualitas) { this.kualitas = kualitas; }
+
+    public String getTahunTanam() { return tahunTanam; }
+    public void setTahunTanam(String tahunTanam) { this.tahunTanam = tahunTanam; }
 
     @Override
     public double hitungPersentaseTidakLayak() {
