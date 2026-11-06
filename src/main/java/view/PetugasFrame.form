@@ -1014,8 +1014,9 @@
                         <Column editable="false" title="Total Panen" type="java.lang.Object"/>
                         <Column editable="false" title="Tidak Layak (%)" type="java.lang.Object"/>
                         <Column editable="false" title="Status" type="java.lang.Object"/>
-                        <Column editable="false" title="Catatan Direksi" type="java.lang.Object"/>
-                        <Column editable="false" title="Catatan Pegawai" type="java.lang.Object"/>
+                        <Column editable="false" title="Catatan Tindak Lanjut" type="java.lang.Object"/>
+                        <Column editable="false" title="Catatan Evaluasi" type="java.lang.Object"/>
+                        <Column editable="false" title="Catatan Petugas" type="java.lang.Object"/>
                       </Table>
                     </Property>
                     <Property name="rowHeight" type="int" value="26"/>

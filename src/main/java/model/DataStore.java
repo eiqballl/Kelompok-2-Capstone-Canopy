@@ -188,11 +188,12 @@ public class DataStore {
 
             ensureEvaluasiColumns(c);
             boolean hasTglAwal = hasEvaluasiTglAwal(c);
+            boolean hasPetugasCol = hasEvaluasiPetugasCol(c);
             String evalQuery = hasTglAwal
                 ? "SELECT id_evaluasi, COALESCE(tanggal_awal, tanggal_evaluasi) AS tanggal_awal, tanggal_evaluasi, " +
-                  "       status, catatan_tindak_lanjut, catatan_evaluasi FROM evaluasi_panen"
+                  "       status, catatan_tindak_lanjut, catatan_evaluasi" + (hasPetugasCol ? ", catatan_petugas " : " ") + "FROM evaluasi_panen"
                 : "SELECT id_evaluasi, tanggal_evaluasi AS tanggal_awal, tanggal_evaluasi, " +
-                  "       status, catatan_tindak_lanjut, catatan_evaluasi FROM evaluasi_panen";
+                  "       status, catatan_tindak_lanjut, catatan_evaluasi" + (hasPetugasCol ? ", catatan_petugas " : " ") + "FROM evaluasi_panen";
 
             ResultSet rsEval = st.executeQuery(evalQuery);
             while (rsEval.next()) {
@@ -200,10 +201,11 @@ public class DataStore {
                 String tglAwal = rsEval.getString("tanggal_awal");
                 String tglAkhir = rsEval.getString("tanggal_evaluasi");
                 String status = normalizeStatus(rsEval.getString("status"));
-                String cPegawai = rsEval.getString("catatan_tindak_lanjut");
-                String cDireksi = rsEval.getString("catatan_evaluasi");
+                String cTindakLanjut = rsEval.getString("catatan_tindak_lanjut");
+                String cEvaluasi = rsEval.getString("catatan_evaluasi");
+                String cPetugas = hasPetugasCol ? rsEval.getString("catatan_petugas") : "-";
                 double[] metrics = calculateMetrics(tglAwal, tglAkhir);
-                tempEvaluasi.add(new Evaluasi(idEv, tglAwal, tglAkhir, metrics[0], metrics[1], status, cDireksi, cPegawai));
+                tempEvaluasi.add(new Evaluasi(idEv, tglAwal, tglAkhir, metrics[0], metrics[1], status, cTindakLanjut, cEvaluasi, cPetugas));
                 try {
                     int num = Integer.parseInt(idEv.replaceAll("\\D+", ""));
                     if (num >= evalCounter) evalCounter = num + 1;
@@ -757,40 +759,55 @@ public class DataStore {
             if (c != null) {
                 ensureRiwayatTable(c);
                 boolean hasTglAwal = hasEvaluasiTglAwal(c);
+                boolean hasPetugasCol = hasEvaluasiPetugasCol(c);
                 if (hasTglAwal) {
-                    try (PreparedStatement ps = c.prepareStatement(
-                            "INSERT INTO evaluasi_panen (id_evaluasi, tanggal_awal, tanggal_evaluasi, status, catatan_tindak_lanjut, id_user, catatan_evaluasi) VALUES (?, ?, ?, ?, ?, ?, ?) " +
-                            "ON DUPLICATE KEY UPDATE tanggal_awal=?, tanggal_evaluasi=?, status=?, catatan_tindak_lanjut=?, id_user=?, catatan_evaluasi=?")) {
-                        ps.setString(1, ev.getIdEval());
-                        ps.setString(2, ev.getTglAwal());
-                        ps.setString(3, ev.getTglAkhir());
-                        ps.setString(4, normalizeStatus(ev.getStatus()));
-                        ps.setString(5, catatanPegawai(ev));
-                        ps.setString(6, getCurrentUserId());
-                        ps.setString(7, catatanDireksi(ev));
-                        ps.setString(8, ev.getTglAwal());
-                        ps.setString(9, ev.getTglAkhir());
-                        ps.setString(10, normalizeStatus(ev.getStatus()));
-                        ps.setString(11, catatanPegawai(ev));
-                        ps.setString(12, getCurrentUserId());
-                        ps.setString(13, catatanDireksi(ev));
+                    String sql = hasPetugasCol
+                        ? "INSERT INTO evaluasi_panen (id_evaluasi, tanggal_awal, tanggal_evaluasi, status, catatan_tindak_lanjut, catatan_evaluasi, catatan_petugas, id_user) VALUES (?, ?, ?, ?, ?, ?, ?, ?) " +
+                          "ON DUPLICATE KEY UPDATE tanggal_awal=?, tanggal_evaluasi=?, status=?, catatan_tindak_lanjut=?, catatan_evaluasi=?, catatan_petugas=?, id_user=?"
+                        : "INSERT INTO evaluasi_panen (id_evaluasi, tanggal_awal, tanggal_evaluasi, status, catatan_tindak_lanjut, catatan_evaluasi, id_user) VALUES (?, ?, ?, ?, ?, ?, ?) " +
+                          "ON DUPLICATE KEY UPDATE tanggal_awal=?, tanggal_evaluasi=?, status=?, catatan_tindak_lanjut=?, catatan_evaluasi=?, id_user=?";
+                    try (PreparedStatement ps = c.prepareStatement(sql)) {
+                        int idx = 1;
+                        ps.setString(idx++, ev.getIdEval());
+                        ps.setString(idx++, ev.getTglAwal());
+                        ps.setString(idx++, ev.getTglAkhir());
+                        ps.setString(idx++, toDbStatus(ev.getStatus()));
+                        ps.setString(idx++, catatanTindakLanjut(ev));
+                        ps.setString(idx++, catatanEvaluasi(ev));
+                        if (hasPetugasCol) ps.setString(idx++, catatanPetugas(ev));
+                        ps.setString(idx++, getCurrentUserId());
+
+                        ps.setString(idx++, ev.getTglAwal());
+                        ps.setString(idx++, ev.getTglAkhir());
+                        ps.setString(idx++, toDbStatus(ev.getStatus()));
+                        ps.setString(idx++, catatanTindakLanjut(ev));
+                        ps.setString(idx++, catatanEvaluasi(ev));
+                        if (hasPetugasCol) ps.setString(idx++, catatanPetugas(ev));
+                        ps.setString(idx++, getCurrentUserId());
                         ps.executeUpdate();
                     }
                 } else {
-                    try (PreparedStatement ps = c.prepareStatement(
-                            "INSERT INTO evaluasi_panen (id_evaluasi, tanggal_evaluasi, status, catatan_tindak_lanjut, id_user, catatan_evaluasi) VALUES (?, ?, ?, ?, ?, ?) " +
-                            "ON DUPLICATE KEY UPDATE tanggal_evaluasi=?, status=?, catatan_tindak_lanjut=?, id_user=?, catatan_evaluasi=?")) {
-                        ps.setString(1, ev.getIdEval());
-                        ps.setString(2, ev.getTglAkhir());
-                        ps.setString(3, normalizeStatus(ev.getStatus()));
-                        ps.setString(4, catatanPegawai(ev));
-                        ps.setString(5, getCurrentUserId());
-                        ps.setString(6, catatanDireksi(ev));
-                        ps.setString(7, ev.getTglAkhir());
-                        ps.setString(8, normalizeStatus(ev.getStatus()));
-                        ps.setString(9, catatanPegawai(ev));
-                        ps.setString(10, getCurrentUserId());
-                        ps.setString(11, catatanDireksi(ev));
+                    String sql = hasPetugasCol
+                        ? "INSERT INTO evaluasi_panen (id_evaluasi, tanggal_evaluasi, status, catatan_tindak_lanjut, catatan_evaluasi, catatan_petugas, id_user) VALUES (?, ?, ?, ?, ?, ?, ?, ?) " +
+                          "ON DUPLICATE KEY UPDATE tanggal_evaluasi=?, status=?, catatan_tindak_lanjut=?, catatan_evaluasi=?, catatan_petugas=?, id_user=?"
+                        : "INSERT INTO evaluasi_panen (id_evaluasi, tanggal_evaluasi, status, catatan_tindak_lanjut, catatan_evaluasi, id_user) VALUES (?, ?, ?, ?, ?, ?) " +
+                          "ON DUPLICATE KEY UPDATE tanggal_evaluasi=?, status=?, catatan_tindak_lanjut=?, catatan_evaluasi=?, id_user=?";
+                    try (PreparedStatement ps = c.prepareStatement(sql)) {
+                        int idx = 1;
+                        ps.setString(idx++, ev.getIdEval());
+                        ps.setString(idx++, ev.getTglAkhir());
+                        ps.setString(idx++, toDbStatus(ev.getStatus()));
+                        ps.setString(idx++, catatanTindakLanjut(ev));
+                        ps.setString(idx++, catatanEvaluasi(ev));
+                        if (hasPetugasCol) ps.setString(idx++, catatanPetugas(ev));
+                        ps.setString(idx++, getCurrentUserId());
+
+                        ps.setString(idx++, ev.getTglAkhir());
+                        ps.setString(idx++, toDbStatus(ev.getStatus()));
+                        ps.setString(idx++, catatanTindakLanjut(ev));
+                        ps.setString(idx++, catatanEvaluasi(ev));
+                        if (hasPetugasCol) ps.setString(idx++, catatanPetugas(ev));
+                        ps.setString(idx++, getCurrentUserId());
                         ps.executeUpdate();
                     }
                 }
@@ -806,7 +823,7 @@ public class DataStore {
         if (value.equalsIgnoreCase("Selesai") || value.toLowerCase().contains("selesai") || value.toLowerCase().contains("sesuai")) {
             return "Selesai";
         }
-        if (value.equalsIgnoreCase("Proses") || value.toLowerCase().contains("proses") || value.toLowerCase().contains("peningkatan")) {
+        if (value.equalsIgnoreCase("Proses") || value.toLowerCase().contains("proses") || value.toLowerCase().contains("peningkatan") || value.equalsIgnoreCase("diproses")) {
             return "Proses";
         }
         if (value.equalsIgnoreCase("Pending") || value.toLowerCase().contains("pending") || value.toLowerCase().contains("tunda")) {
@@ -815,18 +832,35 @@ public class DataStore {
         return "Proses";
     }
 
-    private static String catatanDireksi(Evaluasi ev) {
-        String catatan = ev.getCatatanDireksi() == null ? "" : ev.getCatatanDireksi().trim();
-        return catatan.isEmpty() ? "-" : catatan;
+    public static String toDbStatus(String status) {
+        if (status == null) return "diproses";
+        String val = status.trim().toLowerCase();
+        if (val.contains("selesai") || val.contains("sesuai")) return "selesai";
+        if (val.contains("pending") || val.contains("tunda")) return "pending";
+        return "diproses";
     }
 
-    private static String catatanPegawai(Evaluasi ev) {
-        String catatan = ev.getCatatanPegawai() == null ? "" : ev.getCatatanPegawai().trim();
+    private static String catatanTindakLanjut(Evaluasi ev) {
+        String catatan = ev.getCatatanTindakLanjut() == null ? "" : ev.getCatatanTindakLanjut().trim();
         return catatan.isEmpty() ? "-" : catatan;
     }
 
     private static String catatanEvaluasi(Evaluasi ev) {
-        return catatanDireksi(ev);
+        String catatan = ev.getCatatanEvaluasi() == null ? "" : ev.getCatatanEvaluasi().trim();
+        return catatan.isEmpty() ? "-" : catatan;
+    }
+
+    private static String catatanPetugas(Evaluasi ev) {
+        String catatan = ev.getCatatanPetugas() == null ? "" : ev.getCatatanPetugas().trim();
+        return catatan.isEmpty() ? "-" : catatan;
+    }
+
+    private static String catatanDireksi(Evaluasi ev) {
+        return catatanEvaluasi(ev);
+    }
+
+    private static String catatanPegawai(Evaluasi ev) {
+        return catatanPetugas(ev);
     }
     public synchronized boolean updateEvaluasi(Evaluasi ev) {
         for (int i = 0; i < evaluasiList.size(); i++) {
@@ -836,27 +870,36 @@ public class DataStore {
                     Connection c = Koneksi.getKoneksi();
                     if (c != null) {
                         boolean hasTglAwal = hasEvaluasiTglAwal(c);
+                        boolean hasPetugasCol = hasEvaluasiPetugasCol(c);
                         if (hasTglAwal) {
-                            try (PreparedStatement ps = c.prepareStatement(
-                                    "UPDATE evaluasi_panen SET tanggal_awal=?, tanggal_evaluasi=?, status=?, catatan_tindak_lanjut=?, id_user=?, catatan_evaluasi=? WHERE id_evaluasi=?")) {
-                                ps.setString(1, ev.getTglAwal());
-                                ps.setString(2, ev.getTglAkhir());
-                                ps.setString(3, normalizeStatus(ev.getStatus()));
-                                ps.setString(4, catatanPegawai(ev));
-                                ps.setString(5, getCurrentUserId());
-                                ps.setString(6, catatanDireksi(ev));
-                                ps.setString(7, ev.getIdEval());
+                            String sql = hasPetugasCol
+                                ? "UPDATE evaluasi_panen SET tanggal_awal=?, tanggal_evaluasi=?, status=?, catatan_tindak_lanjut=?, catatan_evaluasi=?, catatan_petugas=?, id_user=? WHERE id_evaluasi=?"
+                                : "UPDATE evaluasi_panen SET tanggal_awal=?, tanggal_evaluasi=?, status=?, catatan_tindak_lanjut=?, catatan_evaluasi=?, id_user=? WHERE id_evaluasi=?";
+                            try (PreparedStatement ps = c.prepareStatement(sql)) {
+                                int idx = 1;
+                                ps.setString(idx++, ev.getTglAwal());
+                                ps.setString(idx++, ev.getTglAkhir());
+                                ps.setString(idx++, toDbStatus(ev.getStatus()));
+                                ps.setString(idx++, catatanTindakLanjut(ev));
+                                ps.setString(idx++, catatanEvaluasi(ev));
+                                if (hasPetugasCol) ps.setString(idx++, catatanPetugas(ev));
+                                ps.setString(idx++, getCurrentUserId());
+                                ps.setString(idx++, ev.getIdEval());
                                 ps.executeUpdate();
                             }
                         } else {
-                            try (PreparedStatement ps = c.prepareStatement(
-                                    "UPDATE evaluasi_panen SET tanggal_evaluasi=?, status=?, catatan_tindak_lanjut=?, id_user=?, catatan_evaluasi=? WHERE id_evaluasi=?")) {
-                                ps.setString(1, ev.getTglAkhir());
-                                ps.setString(2, normalizeStatus(ev.getStatus()));
-                                ps.setString(3, catatanPegawai(ev));
-                                ps.setString(4, getCurrentUserId());
-                                ps.setString(5, catatanDireksi(ev));
-                                ps.setString(6, ev.getIdEval());
+                            String sql = hasPetugasCol
+                                ? "UPDATE evaluasi_panen SET tanggal_evaluasi=?, status=?, catatan_tindak_lanjut=?, catatan_evaluasi=?, catatan_petugas=?, id_user=? WHERE id_evaluasi=?"
+                                : "UPDATE evaluasi_panen SET tanggal_evaluasi=?, status=?, catatan_tindak_lanjut=?, catatan_evaluasi=?, id_user=? WHERE id_evaluasi=?";
+                            try (PreparedStatement ps = c.prepareStatement(sql)) {
+                                int idx = 1;
+                                ps.setString(idx++, ev.getTglAkhir());
+                                ps.setString(idx++, toDbStatus(ev.getStatus()));
+                                ps.setString(idx++, catatanTindakLanjut(ev));
+                                ps.setString(idx++, catatanEvaluasi(ev));
+                                if (hasPetugasCol) ps.setString(idx++, catatanPetugas(ev));
+                                ps.setString(idx++, getCurrentUserId());
+                                ps.setString(idx++, ev.getIdEval());
                                 ps.executeUpdate();
                             }
                         }
@@ -926,14 +969,25 @@ public class DataStore {
             st.execute("ALTER TABLE evaluasi_panen ADD COLUMN tanggal_awal DATE DEFAULT NULL");
         } catch (Exception ignored) {}
         try (Statement st = c.createStatement()) {
+            st.execute("ALTER TABLE evaluasi_panen ADD COLUMN catatan_tindak_lanjut VARCHAR(255) DEFAULT '-'");
+        } catch (Exception ignored) {}
+        try (Statement st = c.createStatement()) {
             st.execute("ALTER TABLE evaluasi_panen ADD COLUMN catatan_evaluasi VARCHAR(255) DEFAULT '-'");
         } catch (Exception ignored) {}
         try (Statement st = c.createStatement()) {
-            st.execute("ALTER TABLE evaluasi_panen ADD COLUMN catatan_tindak_lanjut VARCHAR(255) DEFAULT '-'");
+            st.execute("ALTER TABLE evaluasi_panen ADD COLUMN catatan_petugas VARCHAR(255) DEFAULT '-'");
         } catch (Exception ignored) {}
         try (Statement st = c.createStatement()) {
             st.executeUpdate("UPDATE evaluasi_panen SET tanggal_awal = tanggal_evaluasi WHERE tanggal_awal IS NULL");
         } catch (Exception ignored) {}
+    }
+
+    private static boolean hasEvaluasiPetugasCol(Connection c) {
+        try (ResultSet rs = c.getMetaData().getColumns(null, null, "evaluasi_panen", "catatan_petugas")) {
+            return rs.next();
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public synchronized void logRiwayat(String action, String idPanen, String before, String after) {

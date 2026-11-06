@@ -84,14 +84,16 @@ public class LaporanTindakLanjutDialog extends JDialog {
             "<html><div style='font-size: 12px; color: #334155; line-height: 1.5;'>"
             + "<b>Periode Evaluasi:</b> %s s/d %s<br>"
             + "<b>Total Hasil Panen:</b> %s Kg &nbsp;|&nbsp; <b>Tidak Layak:</b> <font color='%s'>%s%%</font><br>"
-            + "<b>Catatan & Arahan Direksi:</b> <i>%s</i><br>"
+            + "<b>Catatan Tindak Lanjut:</b> <i>%s</i><br>"
+            + "<b>Catatan Evaluasi:</b> <i>%s</i><br>"
             + "<b>Status Saat Ini:</b> <b>%s</b>"
             + "</div></html>",
             evaluasi.getTglAwal(), evaluasi.getTglAkhir(),
             df.format(evaluasi.getTotalPanen()),
             evaluasi.getPersenTidakLayak() > 5.0 ? "#dc2626" : "#16a34a",
             df.format(evaluasi.getPersenTidakLayak()),
-            evaluasi.getCatatanDireksi() == null || "-".equals(evaluasi.getCatatanDireksi()) ? "(Belum ada catatan dari Direksi)" : evaluasi.getCatatanDireksi(),
+            evaluasi.getCatatanTindakLanjut() == null || "-".equals(evaluasi.getCatatanTindakLanjut()) ? "(Belum ada arahan tindak lanjut)" : evaluasi.getCatatanTindakLanjut(),
+            evaluasi.getCatatanEvaluasi() == null || "-".equals(evaluasi.getCatatanEvaluasi()) ? "(Belum ada catatan evaluasi)" : evaluasi.getCatatanEvaluasi(),
             evaluasi.getStatus()
         );
         JLabel lblInfo = new JLabel(infoHtml);
@@ -99,7 +101,7 @@ public class LaporanTindakLanjutDialog extends JDialog {
         pnlBody.add(pnlInfo);
         pnlBody.add(Box.createVerticalStrut(12));
 
-        JLabel lblCatatan = new JLabel("Laporan Hasil Tindak Lanjut Lapangan (Catatan Pegawai):");
+        JLabel lblCatatan = new JLabel("Laporan Pelaksanaan Lapangan (Catatan Petugas):");
         lblCatatan.setFont(new Font("Segoe UI", Font.BOLD, 12));
         lblCatatan.setForeground(new Color(30, 41, 59));
         pnlBody.add(lblCatatan);
@@ -109,7 +111,7 @@ public class LaporanTindakLanjutDialog extends JDialog {
         txtCatatanLapangan.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         txtCatatanLapangan.setLineWrap(true);
         txtCatatanLapangan.setWrapStyleWord(true);
-        txtCatatanLapangan.setText(evaluasi.getCatatanPegawai() == null || "-".equals(evaluasi.getCatatanPegawai()) ? "" : evaluasi.getCatatanPegawai());
+        txtCatatanLapangan.setText(evaluasi.getCatatanPetugas() == null || "-".equals(evaluasi.getCatatanPetugas()) ? "" : evaluasi.getCatatanPetugas());
 
         JScrollPane scrollCatatan = new JScrollPane(txtCatatanLapangan);
         scrollCatatan.setBorder(BorderFactory.createLineBorder(new Color(203, 213, 225), 1));
@@ -140,7 +142,7 @@ public class LaporanTindakLanjutDialog extends JDialog {
                     "Peringatan", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            evaluasi.setCatatanPegawai(catatan);
+            evaluasi.setCatatanPetugas(catatan);
             DataStore.getInstance().updateEvaluasi(evaluasi);
             saved = true;
             JOptionPane.showMessageDialog(this,

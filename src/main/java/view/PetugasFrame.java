@@ -132,8 +132,9 @@ public class PetugasFrame extends javax.swing.JFrame {
                 df.format(ev.getTotalPanen()) + " Kg (Rata-rata: " + df.format(ev.getRataRataPerBulan()) + " Kg/bln)",
                 df.format(ev.getPersenTidakLayak()) + "%",
                 ev.getStatus(),
-                ev.getCatatanDireksi(),
-                ev.getCatatanPegawai()
+                ev.getCatatanTindakLanjut(),
+                ev.getCatatanEvaluasi(),
+                ev.getCatatanPetugas()
             });
         }
     }
@@ -815,11 +816,11 @@ public class PetugasFrame extends javax.swing.JFrame {
 
             },
             new String [] {
-                "No.", "Periode", "Total Panen", "Tidak Layak (%)", "Status", "Catatan Direksi", "Catatan Pegawai"
+                "No.", "Periode", "Total Panen", "Tidak Layak (%)", "Status", "Catatan Tindak Lanjut", "Catatan Evaluasi", "Catatan Petugas"
             }
         ) {
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false
+                false, false, false, false, false, false, false, false
             };
 
             public boolean isCellEditable(int rowIndex, int columnIndex) {

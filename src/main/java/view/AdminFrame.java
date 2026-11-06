@@ -345,8 +345,9 @@ public class AdminFrame extends javax.swing.JFrame {
                 df.format(ev.getTotalPanen()) + " Kg (Rata-rata: " + df.format(ev.getRataRataPerBulan()) + " Kg/bln)",
                 df.format(ev.getPersenTidakLayak()) + "%",
                 ev.getStatus(),
-                ev.getCatatanDireksi(),
-                ev.getCatatanPegawai()
+                ev.getCatatanTindakLanjut(),
+                ev.getCatatanEvaluasi(),
+                ev.getCatatanPetugas()
             });
         }
     }
@@ -360,6 +361,9 @@ public class AdminFrame extends javax.swing.JFrame {
         lblPersenTidakLayak.setText("0.00%");
         cmbStatusEval.setSelectedItem("Proses");
         txtCatatanTindakLanjut.setText("");
+        if (txtCatatanEvaluasi != null) {
+            txtCatatanEvaluasi.setText("");
+        }
         if (txtCatatanPegawaiView != null) {
             txtCatatanPegawaiView.setText("");
         }
@@ -482,6 +486,9 @@ public class AdminFrame extends javax.swing.JFrame {
         lblCatatan = new javax.swing.JLabel();
         scrollCatatan = new javax.swing.JScrollPane();
         txtCatatanTindakLanjut = new javax.swing.JTextArea();
+        lblCatatanEvaluasi = new javax.swing.JLabel();
+        scrollCatatanEvaluasi = new javax.swing.JScrollPane();
+        txtCatatanEvaluasi = new javax.swing.JTextArea();
         lblCatatanPegawaiView = new javax.swing.JLabel();
         scrollCatatanPegawaiView = new javax.swing.JScrollPane();
         txtCatatanPegawaiView = new javax.swing.JTextArea();
@@ -1473,22 +1480,32 @@ public class AdminFrame extends javax.swing.JFrame {
         });
 
         lblCatatan.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        lblCatatan.setText("Catatan & Arahan Direksi (Opsional):");
+        lblCatatan.setText("Catatan Tindak Lanjut:");
 
         txtCatatanTindakLanjut.setColumns(20);
         txtCatatanTindakLanjut.setLineWrap(true);
-        txtCatatanTindakLanjut.setRows(3);
+        txtCatatanTindakLanjut.setRows(2);
         txtCatatanTindakLanjut.setWrapStyleWord(true);
         scrollCatatan.setViewportView(txtCatatanTindakLanjut);
 
+        lblCatatanEvaluasi.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
+        lblCatatanEvaluasi.setText("Catatan Evaluasi:");
+
+        txtCatatanEvaluasi.setColumns(20);
+        txtCatatanEvaluasi.setLineWrap(true);
+        txtCatatanEvaluasi.setRows(2);
+        txtCatatanEvaluasi.setWrapStyleWord(true);
+        scrollCatatanEvaluasi.setViewportView(txtCatatanEvaluasi);
+
         lblCatatanPegawaiView.setFont(new java.awt.Font("Segoe UI", 1, 12)); // NOI18N
-        lblCatatanPegawaiView.setText("Laporan Tindak Lanjut Petugas:");
+        lblCatatanPegawaiView.setText("Catatan Petugas:");
 
         txtCatatanPegawaiView.setEditable(false);
         txtCatatanPegawaiView.setBackground(new java.awt.Color(241, 245, 249));
         txtCatatanPegawaiView.setColumns(20);
+        txtCatatanPegawaiView.setFont(new java.awt.Font("Segoe UI", 0, 12)); // NOI18N
         txtCatatanPegawaiView.setLineWrap(true);
-        txtCatatanPegawaiView.setRows(3);
+        txtCatatanPegawaiView.setRows(2);
         txtCatatanPegawaiView.setWrapStyleWord(true);
         scrollCatatanPegawaiView.setViewportView(txtCatatanPegawaiView);
 
@@ -1543,6 +1560,7 @@ public class AdminFrame extends javax.swing.JFrame {
                     .addComponent(pnlMetrikCard, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(cmbStatusEval, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(scrollCatatan)
+                    .addComponent(scrollCatatanEvaluasi)
                     .addComponent(scrollCatatanPegawaiView)
                     .addGroup(pnlFormEvalLayout.createSequentialGroup()
                         .addGroup(pnlFormEvalLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1557,6 +1575,7 @@ public class AdminFrame extends javax.swing.JFrame {
                             .addComponent(lblEvalPeriode)
                             .addComponent(lblStatusEval)
                             .addComponent(lblCatatan)
+                            .addComponent(lblCatatanEvaluasi)
                             .addComponent(lblCatatanPegawaiView))
                         .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(pnlFormEvalLayout.createSequentialGroup()
@@ -1593,11 +1612,15 @@ public class AdminFrame extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(lblCatatan)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(scrollCatatan, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(scrollCatatan, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(lblCatatanEvaluasi)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(scrollCatatanEvaluasi, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(lblCatatanPegawaiView)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(scrollCatatanPegawaiView, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(scrollCatatanPegawaiView, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addGroup(pnlFormEvalLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnSimpanEval, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -1621,11 +1644,11 @@ public class AdminFrame extends javax.swing.JFrame {
 
             },
             new String [] {
-                "No.", "Periode", "Total Panen", "Tidak Layak (%)", "Status", "Catatan Direksi", "Catatan Pegawai"
+                "No.", "Periode", "Total Panen", "Tidak Layak (%)", "Status", "Catatan Tindak Lanjut", "Catatan Evaluasi", "Catatan Petugas"
             }
         ) {
             boolean[] canEdit = new boolean [] {
-                false, false, false, false, false, false, false
+                false, false, false, false, false, false, false, false
             };
 
             public boolean isCellEditable(int rowIndex, int columnIndex) {
@@ -1697,35 +1720,10 @@ public class AdminFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_btnLogoutActionPerformed
 
     private void btnSimpanBlokActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSimpanBlokActionPerformed
-        String kodeBlok = txtKodeBlok.getText().trim();
         String namaLahan = txtNamaLahan.getText().trim();
         String luasStr = txtLuasLahan.getText().trim();
         String komoditas = cmbKomoditasBlok.getSelectedItem() != null ? cmbKomoditasBlok.getSelectedItem().toString() : "Sawit";
-
-        if (kodeBlok.isEmpty()) {
-            kodeBlok = generateKodeBlokOtomatis(komoditas);
-            txtKodeBlok.setText(kodeBlok);
-        }
-
-        try {
-            InputValidator.validateKodeBlok(kodeBlok);
-        } catch (IllegalArgumentException e) {
-            JOptionPane.showMessageDialog(this, 
-                "<html><div style='width: 300px;'><b>Validasi Gagal:</b> " + e.getMessage() + "</div></html>", 
-                "Kesalahan Input", JOptionPane.WARNING_MESSAGE);
-            txtKodeBlok.requestFocus();
-            return;
-        }
-
-        for (BlokLahan b : DataStore.getInstance().getBlokList()) {
-            if (b.getKodeBlok().equalsIgnoreCase(kodeBlok)) {
-                JOptionPane.showMessageDialog(this, 
-                    "<html><div style='width: 300px;'><b>Kode Blok Duplikat:</b> Kode blok '" + kodeBlok + "' sudah digunakan. Gunakan kode lain.</div></html>", 
-                    "Peringatan Duplikasi", JOptionPane.WARNING_MESSAGE);
-                txtKodeBlok.requestFocus();
-                return;
-            }
-        }
+        String kodeBlok = generateKodeBlokOtomatis(komoditas);
 
         if (namaLahan.isEmpty()) {
             JOptionPane.showMessageDialog(this, 
@@ -1851,8 +1849,6 @@ public class AdminFrame extends javax.swing.JFrame {
         int row = tblBlokLahan.getSelectedRow();
         if (row != -1) {
             selectedBlokKode = tblBlokLahan.getValueAt(row, 0).toString();
-            txtKodeBlok.setText(selectedBlokKode);
-            txtKodeBlok.setEditable(false);
             txtNamaLahan.setText(tblBlokLahan.getValueAt(row, 1).toString());
             for (BlokLahan b : DataStore.getInstance().getBlokList()) {
                 if (b.getKodeBlok().equalsIgnoreCase(selectedBlokKode)) {
@@ -2277,11 +2273,13 @@ public class AdminFrame extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "Status evaluasi wajib dipilih (Proses atau Selesai)!", "Validasi Gagal", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        String catatan = txtCatatanTindakLanjut.getText().trim();
+        String cTindakLanjut = txtCatatanTindakLanjut.getText().trim();
+        String cEvaluasi = txtCatatanEvaluasi != null ? txtCatatanEvaluasi.getText().trim() : "-";
+        String cPetugas = (txtCatatanPegawaiView != null && !txtCatatanPegawaiView.getText().trim().startsWith("(")) ? txtCatatanPegawaiView.getText().trim() : "-";
 
         String newId = DataStore.getInstance().generateEvalId();
 
-        Evaluasi ev = new Evaluasi(newId, tglAwal, tglAkhir, metrics[0], metrics[1], status, catatan, "-");
+        Evaluasi ev = new Evaluasi(newId, tglAwal, tglAkhir, metrics[0], metrics[1], status, cTindakLanjut, cEvaluasi, cPetugas);
         DataStore.getInstance().addEvaluasi(ev);
 
         JOptionPane.showMessageDialog(this, "Evaluasi panen berhasil disimpan dengan ID: " + newId);
@@ -2313,7 +2311,8 @@ public class AdminFrame extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "Status evaluasi wajib dipilih (Proses atau Selesai)!", "Validasi Gagal", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        String catatan = txtCatatanTindakLanjut.getText().trim();
+        String cTindakLanjut = txtCatatanTindakLanjut.getText().trim();
+        String cEvaluasi = txtCatatanEvaluasi != null ? txtCatatanEvaluasi.getText().trim() : "-";
 
         Evaluasi existing = null;
         for (Evaluasi item : DataStore.getInstance().getEvaluasiList()) {
@@ -2322,8 +2321,8 @@ public class AdminFrame extends javax.swing.JFrame {
                 break;
             }
         }
-        String cPegawai = existing != null ? existing.getCatatanPegawai() : "-";
-        Evaluasi ev = new Evaluasi(selectedEvalId, tglAwal, tglAkhir, metrics[0], metrics[1], status, catatan, cPegawai);
+        String cPetugas = existing != null ? existing.getCatatanPetugas() : "-";
+        Evaluasi ev = new Evaluasi(selectedEvalId, tglAwal, tglAkhir, metrics[0], metrics[1], status, cTindakLanjut, cEvaluasi, cPetugas);
         DataStore.getInstance().updateEvaluasi(ev);
 
         JOptionPane.showMessageDialog(this, "Data evaluasi berhasil diperbarui!");
@@ -2367,25 +2366,18 @@ public class AdminFrame extends javax.swing.JFrame {
             lblTotalBulan.setText("<html>" + df.format(ev.getTotalPanen()) + " Kg<br><span style=\'font-size:10px;font-weight:normal;color:#64748b;\'>Rata-rata: " + df.format(ev.getRataRataPerBulan()) + " Kg/bln</span></html>");
             lblPersenTidakLayak.setText(df.format(ev.getPersenTidakLayak()) + "%");
             cmbStatusEval.setSelectedItem("Selesai".equalsIgnoreCase(ev.getStatus()) ? "Selesai" : "Proses");
-            txtCatatanTindakLanjut.setText(ev.getCatatanDireksi());
+            txtCatatanTindakLanjut.setText(ev.getCatatanTindakLanjut());
+            if (txtCatatanEvaluasi != null) {
+                txtCatatanEvaluasi.setText(ev.getCatatanEvaluasi() == null || "-".equals(ev.getCatatanEvaluasi()) ? "" : ev.getCatatanEvaluasi());
+            }
             if (txtCatatanPegawaiView != null) {
-                txtCatatanPegawaiView.setText(ev.getCatatanPegawai() == null || "-".equals(ev.getCatatanPegawai()) ? "(Belum ada laporan tindak lanjut dari petugas)" : ev.getCatatanPegawai());
+                txtCatatanPegawaiView.setText(ev.getCatatanPetugas() == null || "-".equals(ev.getCatatanPetugas()) ? "(Belum ada catatan dari petugas)" : ev.getCatatanPetugas());
             }
         }
     }//GEN-LAST:event_tblEvaluasiMouseClicked
 
     private void cmbKomoditasBlokActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmbKomoditasBlokActionPerformed
-        Object selected = cmbKomoditasBlok.getSelectedItem();
-        if (selected != null) {
-            String komoditasPilihan = selected.toString();
-            txtKodeBlok.setText(generateKodeBlokOtomatis(komoditasPilihan));
-            txtKodeBlok.setEditable(false);
-        }   
     }//GEN-LAST:event_cmbKomoditasBlokActionPerformed
-
-    private void txtKodeBlokActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtKodeBlokActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_txtKodeBlokActionPerformed
 
     private void cmbStatusEvalActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmbStatusEvalActionPerformed
         // TODO add your handling code here:
@@ -2424,6 +2416,7 @@ public class AdminFrame extends javax.swing.JFrame {
     private javax.swing.JComboBox<String> cmbStatusEval;
     private javax.swing.JLabel lblBlok;
     private javax.swing.JLabel lblCatatan;
+    private javax.swing.JLabel lblCatatanEvaluasi;
     private javax.swing.JLabel lblCatatanPegawaiView;
     private javax.swing.JLabel lblDaftarBlok;
     private javax.swing.JLabel lblDaftarEval;
@@ -2438,7 +2431,6 @@ public class AdminFrame extends javax.swing.JFrame {
     private javax.swing.JLabel lblFilterKomoditas;
     private javax.swing.JLabel lblInput1;
     private javax.swing.JLabel lblInput2;
-    private javax.swing.JLabel lblKodeBlok;
     private javax.swing.JLabel lblKomoditas;
     private javax.swing.JLabel lblKomoditasBlok;
     private javax.swing.JLabel lblLogoHeader;
@@ -2483,6 +2475,7 @@ public class AdminFrame extends javax.swing.JFrame {
     private javax.swing.JRadioButton rbSawit;
     private javax.swing.JScrollPane scrollBlok;
     private javax.swing.JScrollPane scrollCatatan;
+    private javax.swing.JScrollPane scrollCatatanEvaluasi;
     private javax.swing.JScrollPane scrollCatatanPegawaiView;
     private javax.swing.JScrollPane scrollEval;
     private javax.swing.JScrollPane scrollPanen;
@@ -2499,6 +2492,7 @@ public class AdminFrame extends javax.swing.JFrame {
     private javax.swing.JTable tblPanen;
     private javax.swing.JTable tblPegawai;
     private javax.swing.JTable tblRekap;
+    private javax.swing.JTextArea txtCatatanEvaluasi;
     private javax.swing.JTextArea txtCatatanPegawaiView;
     private javax.swing.JTextArea txtCatatanTindakLanjut;
     private javax.swing.JTextField txtDetailRole;
@@ -2506,7 +2500,6 @@ public class AdminFrame extends javax.swing.JFrame {
     private javax.swing.JTextField txtEvalAwal;
     private javax.swing.JTextField txtInput1;
     private javax.swing.JTextField txtInput2;
-    private javax.swing.JTextField txtKodeBlok;
     private javax.swing.JTextField txtLuasLahan;
     private javax.swing.JTextField txtNamaLahan;
     private javax.swing.JTextField txtNamaPegawai;
