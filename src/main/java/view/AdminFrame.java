@@ -4,6 +4,7 @@ import component.DateTextField;
 import controller.InputValidator;
 import java.text.DecimalFormat;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
@@ -59,7 +60,7 @@ public class AdminFrame extends javax.swing.JFrame {
         cmbModeRekap.setModel(new javax.swing.DefaultComboBoxModel<>(new String[]{"Semua Data", "Rentang Tanggal", "Bulan Ini", "Tahun Ini", "Hari Ini"}));
         cmbModeRekap.addActionListener(e -> handleModeRekapChange());
         
-        cmbStatusEval.setModel(new javax.swing.DefaultComboBoxModel<>(new String[]{"Proses", "Selesai"}));
+        cmbStatusEval.setModel(new javax.swing.DefaultComboBoxModel<>(new String[]{"Proses", "Selesai", "Pending"}));
 
         tblRekap.setAutoCreateRowSorter(true);
         tblPanen.setAutoCreateRowSorter(true);
@@ -1799,45 +1800,58 @@ public class AdminFrame extends javax.swing.JFrame {
             return;
         }
         
-        String panenTerkait = "";
-        int jumlahPanenNyangkut = 0;
-        
+        List<String> panenList = new ArrayList<>();
         for (Panen panen : DataStore.getInstance().getPanenList()) {
             if (panen.getBlokLahan().startsWith(selectedBlokKode + " - ") || panen.getBlokLahan().equalsIgnoreCase(selectedBlokKode)) {
-                jumlahPanenNyangkut++;
-                if (panenTerkait.isEmpty()) {
-                    panenTerkait = panen.getIdPanen();
-                }
+                panenList.add(panen.getIdPanen());
             }
         }
         
-        if (jumlahPanenNyangkut > 0) {
-            JOptionPane.showMessageDialog(this, 
-                "<html><div style='width: 360px;'>" +
-                "<b>Penghapusan Ditolak!</b><br>" +
-                "Blok lahan <b>" + selectedBlokKode + "</b> tidak dapat dihapus karena masih tersangkut pada <b>" + jumlahPanenNyangkut + " data aktivitas panen</b> aktif (contoh ID: " + panenTerkait + ").<br><br>" +
-                "<i>Solusi: Hapus atau pindahkan terlebih dahulu data aktivitas panen terkait sebelum menghapus blok ini.</i>" +
-                "</div></html>", 
-                "Blok Masih Digunakan", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
+        boolean cascade = false;
+        if (!panenList.isEmpty()) {
+            String sampleIds = String.join(", ", panenList.subList(0, Math.min(3, panenList.size())));
+            if (panenList.size() > 3) sampleIds += ", ...";
 
-        int confirm = JOptionPane.showConfirmDialog(this,
-            "<html>Apakah Anda yakin ingin menghapus permanen blok lahan <b>" + selectedBlokKode + "</b> dari sistem?</html>",
-            "Konfirmasi Hapus",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.WARNING_MESSAGE);
-            
-        if (confirm == JOptionPane.YES_OPTION) {
-            try {
-                DataStore.getInstance().deleteBlok(selectedBlokKode);
-                JOptionPane.showMessageDialog(this, "Data blok lahan berhasil dihapus!");
-                refreshBlokTable();
-                resetBlokForm();
-                selectedBlokKode = null;
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "<html><div style='width: 320px;'><b>Gagal Menghapus Blok Lahan:</b><br>" + ex.getMessage() + "</div></html>", "Peringatan", JOptionPane.WARNING_MESSAGE);
+            String message = "<html><div style='width: 440px;'>" +
+                "<h3 style='color: #dc2626; margin: 0 0 8px 0;'>PERINGATAN: DATA MASIH MEMILIKI RELASI!</h3>" +
+                "Blok lahan <b>" + selectedBlokKode + "</b> saat ini menampung <b>" + panenList.size() + " rekaman aktivitas panen</b>:<br>" +
+                "• Contoh ID Panen: <b>" + sampleIds + "</b><br><br>" +
+                "<div style='background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 8px; color: #991b1b;'>" +
+                "<b>PERHATIAN HAPUS PAKSA (CASCADE):</b><br>" +
+                "Melanjutkan akan <u>menghapus permanen seluruh " + panenList.size() + " data panen</u> di blok ini beserta seluruh data produk panen (sawit/karet) dan riwayat perubahannya dari database!" +
+                "</div><br>" +
+                "Apakah Anda yakin ingin <b>PAKSA HAPUS (CASCADE)</b> blok ini beserta semua data di dalamnya?</div></html>";
+
+            Object[] options = {"Ya, Hapus Paksa (Cascade)", "Batalkan"};
+            int choice = JOptionPane.showOptionDialog(this, message, "Peringatan Bahaya: Hapus Paksa Blok Lahan",
+                JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
+
+            if (choice != 0) {
+                return;
             }
+            cascade = true;
+        } else {
+            int confirm = JOptionPane.showConfirmDialog(this,
+                "<html><div style='width: 340px;'>Apakah Anda yakin ingin menghapus permanen blok lahan <b>" + selectedBlokKode + "</b>?</div></html>",
+                "Konfirmasi Hapus",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE);
+            if (confirm != JOptionPane.YES_OPTION) return;
+        }
+            
+        try {
+            DataStore.getInstance().deleteBlok(selectedBlokKode, cascade);
+            JOptionPane.showMessageDialog(this, "Data blok lahan" + (cascade ? " beserta seluruh data panen terkait" : "") + " berhasil dihapus!");
+            refreshBlokTable();
+            if (cascade) {
+                refreshPanenTable();
+                refreshRekapTable();
+                loadBlokComboBox();
+            }
+            resetBlokForm();
+            selectedBlokKode = null;
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "<html><div style='width: 320px;'><b>Gagal Menghapus Blok Lahan:</b><br>" + ex.getMessage() + "</div></html>", "Peringatan", JOptionPane.WARNING_MESSAGE);
         }
     }//GEN-LAST:event_btnHapusBlokActionPerformed
 
@@ -1970,20 +1984,65 @@ public class AdminFrame extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "<html><div style='width: 300px;'>Pilih pegawai pada tabel terlebih dahulu!</div></html>", "Peringatan", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        int confirm = JOptionPane.showConfirmDialog(this,
-            "Apakah Anda yakin ingin menghapus data pegawai yang dipilih?",
-            "Konfirmasi Hapus",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.WARNING_MESSAGE);
-        if (confirm == JOptionPane.YES_OPTION) {
-            try {
-                DataStore.getInstance().deletePegawai(selectedPegawaiId);
-                JOptionPane.showMessageDialog(this, "Data pegawai berhasil dihapus!");
-                refreshPegawaiTable();
-                resetPegawaiForm();
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "<html><div style='width: 320px;'><b>Gagal Menghapus Pegawai:</b><br>" + ex.getMessage() + "</div></html>", "Peringatan", JOptionPane.WARNING_MESSAGE);
+
+        // Cek keterikatan data pegawai ke transaksi panen
+        List<String> panenList = new ArrayList<>();
+        try {
+            java.sql.Connection conn = config.Koneksi.getKoneksi();
+            if (conn != null) {
+                try (java.sql.PreparedStatement ps = conn.prepareStatement("SELECT id_panen FROM aktivitas_panen WHERE id_user = ?")) {
+                    ps.setString(1, selectedPegawaiId);
+                    try (java.sql.ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) panenList.add(rs.getString("id_panen"));
+                    }
+                }
             }
+        } catch (Exception ignored) {}
+
+        boolean cascade = false;
+        if (!panenList.isEmpty()) {
+            String sampleIds = String.join(", ", panenList.subList(0, Math.min(3, panenList.size())));
+            if (panenList.size() > 3) sampleIds += ", ...";
+
+            String message = "<html><div style='width: 440px;'>" +
+                "<h3 style='color: #dc2626; margin: 0 0 8px 0;'>PERINGATAN: PEGAWAI MEMILIKI TRANSAKSI AKTIF!</h3>" +
+                "Pegawai <b>" + txtNamaPegawai.getText().trim() + " (" + selectedPegawaiId + ")</b> tercatat sebagai penanggung jawab pada <b>" + panenList.size() + " data aktivitas panen</b>:<br>" +
+                "• Contoh ID Panen: <b>" + sampleIds + "</b><br><br>" +
+                "<div style='background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 8px; color: #991b1b;'>" +
+                "<b>PERHATIAN HAPUS PAKSA (CASCADE):</b><br>" +
+                "Melanjutkan akan <u>menghapus permanen akun pegawai ini beserta seluruh " + panenList.size() + " data panen</u> yang dicatat olehnya (beserta data produk sawit/karet & riwayat perubahan)!" +
+                "</div><br>" +
+                "Apakah Anda yakin ingin <b>PAKSA HAPUS (CASCADE)</b> pegawai dan seluruh riwayat panennya?</div></html>";
+
+            Object[] options = {"Ya, Hapus Paksa (Cascade)", "Batalkan"};
+            int choice = JOptionPane.showOptionDialog(this, message, "Peringatan Bahaya: Hapus Paksa Pegawai",
+                JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
+
+            if (choice != 0) {
+                return;
+            }
+            cascade = true;
+        } else {
+            int confirm = JOptionPane.showConfirmDialog(this,
+                "<html><div style='width: 340px;'>Apakah Anda yakin ingin menghapus data pegawai <b>" + txtNamaPegawai.getText().trim() + " (" + selectedPegawaiId + ")</b>?</div></html>",
+                "Konfirmasi Hapus",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE);
+            if (confirm != JOptionPane.YES_OPTION) return;
+        }
+
+        try {
+            DataStore.getInstance().deletePegawai(selectedPegawaiId, cascade);
+            JOptionPane.showMessageDialog(this, "Data pegawai" + (cascade ? " beserta data transaksi terkait" : "") + " berhasil dihapus!");
+            refreshPegawaiTable();
+            if (cascade) {
+                refreshPanenTable();
+                refreshRekapTable();
+            }
+            resetPegawaiForm();
+            selectedPegawaiId = null;
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "<html><div style='width: 320px;'><b>Gagal Menghapus Pegawai:</b><br>" + ex.getMessage() + "</div></html>", "Peringatan", JOptionPane.WARNING_MESSAGE);
         }
     }//GEN-LAST:event_btnHapusPgwActionPerformed
 
@@ -2051,8 +2110,9 @@ public class AdminFrame extends javax.swing.JFrame {
         }
 
         int confirm = JOptionPane.showConfirmDialog(this,
-            "Apakah Anda yakin ingin menghapus data yang dipilih?",
-            "Konfirmasi Hapus",
+            "<html><div style='width: 350px;'>Apakah Anda yakin ingin menghapus data panen <b>" + selectedPanenId + "</b>?<br><br>" +
+            "<small style='color: #475569;'>Catatan: Rincian produk panen (sawit/karet) serta riwayat perubahan terkait akan ikut dibersihkan secara otomatis.</small></div></html>",
+            "Konfirmasi Hapus Panen",
             JOptionPane.YES_NO_OPTION,
             JOptionPane.WARNING_MESSAGE);
 
@@ -2063,6 +2123,7 @@ public class AdminFrame extends javax.swing.JFrame {
                 refreshPanenTable();
                 refreshRekapTable();
                 resetPanenForm();
+                selectedPanenId = null;
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "<html><div style='width: 320px;'><b>Gagal Menghapus Panen:</b><br>" + ex.getMessage() + "</div></html>", "Peringatan", JOptionPane.WARNING_MESSAGE);
             }
@@ -2270,7 +2331,7 @@ public class AdminFrame extends javax.swing.JFrame {
 
         String status = cmbStatusEval.getSelectedItem() != null ? cmbStatusEval.getSelectedItem().toString() : "Proses";
         if (status.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Status evaluasi wajib dipilih (Proses atau Selesai)!", "Validasi Gagal", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Status evaluasi wajib dipilih (Proses, Selesai, atau Pending)!", "Validasi Gagal", JOptionPane.WARNING_MESSAGE);
             return;
         }
         String cTindakLanjut = txtCatatanTindakLanjut.getText().trim();
@@ -2308,7 +2369,7 @@ public class AdminFrame extends javax.swing.JFrame {
         double[] metrics = DataStore.getInstance().calculateMetrics(tglAwal, tglAkhir);
         String status = cmbStatusEval.getSelectedItem() != null ? cmbStatusEval.getSelectedItem().toString() : "Proses";
         if (status.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Status evaluasi wajib dipilih (Proses atau Selesai)!", "Validasi Gagal", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Status evaluasi wajib dipilih (Proses, Selesai, atau Pending)!", "Validasi Gagal", JOptionPane.WARNING_MESSAGE);
             return;
         }
         String cTindakLanjut = txtCatatanTindakLanjut.getText().trim();
@@ -2336,8 +2397,8 @@ public class AdminFrame extends javax.swing.JFrame {
             return;
         }
         int confirm = JOptionPane.showConfirmDialog(this,
-            "Apakah Anda yakin ingin menghapus data evaluasi yang dipilih?",
-            "Konfirmasi Hapus",
+            "<html><div style='width: 340px;'>Apakah Anda yakin ingin menghapus data evaluasi <b>" + selectedEvalId + "</b> (" + txtEvalAwal.getText() + " s/d " + txtEvalAkhir.getText() + ")?</div></html>",
+            "Konfirmasi Hapus Evaluasi",
             JOptionPane.YES_NO_OPTION,
             JOptionPane.WARNING_MESSAGE);
         if (confirm == JOptionPane.YES_OPTION) {
@@ -2346,6 +2407,7 @@ public class AdminFrame extends javax.swing.JFrame {
                 JOptionPane.showMessageDialog(this, "Data berhasil dihapus!");
                 refreshEvalTable();
                 resetEvalForm();
+                selectedEvalId = null;
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "<html><div style='width: 320px;'><b>Gagal Menghapus Evaluasi:</b><br>" + ex.getMessage() + "</div></html>", "Peringatan", JOptionPane.WARNING_MESSAGE);
             }
@@ -2365,7 +2427,8 @@ public class AdminFrame extends javax.swing.JFrame {
             txtEvalAkhir.setText(ev.getTglAkhir());
             lblTotalBulan.setText("<html>" + df.format(ev.getTotalPanen()) + " Kg<br><span style=\'font-size:10px;font-weight:normal;color:#64748b;\'>Rata-rata: " + df.format(ev.getRataRataPerBulan()) + " Kg/bln</span></html>");
             lblPersenTidakLayak.setText(df.format(ev.getPersenTidakLayak()) + "%");
-            cmbStatusEval.setSelectedItem("Selesai".equalsIgnoreCase(ev.getStatus()) ? "Selesai" : "Proses");
+            String statusVal = DataStore.normalizeStatus(ev.getStatus());
+            cmbStatusEval.setSelectedItem(statusVal);
             txtCatatanTindakLanjut.setText(ev.getCatatanTindakLanjut());
             if (txtCatatanEvaluasi != null) {
                 txtCatatanEvaluasi.setText(ev.getCatatanEvaluasi() == null || "-".equals(ev.getCatatanEvaluasi()) ? "" : ev.getCatatanEvaluasi());

@@ -951,8 +951,9 @@ public class PetugasFrame extends javax.swing.JFrame {
         }
 
         int confirm = JOptionPane.showConfirmDialog(this,
-            "Apakah Anda yakin ingin menghapus data yang dipilih?",
-            "Konfirmasi Hapus",
+            "<html><div style='width: 350px;'>Apakah Anda yakin ingin menghapus data panen <b>" + selectedPanenId + "</b>?<br><br>" +
+            "<small style='color: #475569;'>Catatan: Rincian produk panen (sawit/karet) serta riwayat perubahan terkait akan ikut dibersihkan secara otomatis.</small></div></html>",
+            "Konfirmasi Hapus Panen",
             JOptionPane.YES_NO_OPTION,
             JOptionPane.WARNING_MESSAGE);
 
@@ -963,6 +964,7 @@ public class PetugasFrame extends javax.swing.JFrame {
                 refreshPanenTable();
                 refreshRekapTable();
                 resetPanenForm();
+                selectedPanenId = null;
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "<html><div style='width: 320px;'><b>Gagal Menghapus Panen:</b><br>" + ex.getMessage() + "</div></html>", "Peringatan", JOptionPane.WARNING_MESSAGE);
             }

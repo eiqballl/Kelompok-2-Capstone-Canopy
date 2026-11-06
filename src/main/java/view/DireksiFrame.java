@@ -58,7 +58,7 @@ public class DireksiFrame extends javax.swing.JFrame {
         tblBlokLahan.setAutoCreateRowSorter(true);
         tblRekap.setAutoCreateRowSorter(true);
         tblEvaluasi.setAutoCreateRowSorter(true);
-        cmbStatusEval.setModel(new javax.swing.DefaultComboBoxModel<>(new String[]{"Proses", "Selesai"}));
+        cmbStatusEval.setModel(new javax.swing.DefaultComboBoxModel<>(new String[]{"Proses", "Selesai", "Pending"}));
 
         javax.swing.event.DocumentListener evalListener = new javax.swing.event.DocumentListener() {
             public void insertUpdate(javax.swing.event.DocumentEvent e) { autoUpdateMetrikPeriode(); }
@@ -279,6 +279,54 @@ public class DireksiFrame extends javax.swing.JFrame {
 
         tabMain.setFont(new java.awt.Font("Segoe UI", 1, 13)); // NOI18N
 
+        lblDaftarBlok.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        lblDaftarBlok.setText("Daftar Blok Lahan Perkebunan:");
+
+        tblBlokLahan.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        tblBlokLahan.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+
+            },
+            new String [] {
+                "Kode Blok", "Nama Blok / Lahan", "Luas Lahan (Ha)", "Komoditas"
+            }
+        ) {
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false
+            };
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        tblBlokLahan.setRowHeight(26);
+        scrollBlok.setViewportView(tblBlokLahan);
+
+        javax.swing.GroupLayout pnlTabBlokLayout = new javax.swing.GroupLayout(pnlTabBlok);
+        pnlTabBlok.setLayout(pnlTabBlokLayout);
+        pnlTabBlokLayout.setHorizontalGroup(
+            pnlTabBlokLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(pnlTabBlokLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(pnlTabBlokLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(scrollBlok, javax.swing.GroupLayout.DEFAULT_SIZE, 1150, Short.MAX_VALUE)
+                    .addGroup(pnlTabBlokLayout.createSequentialGroup()
+                        .addComponent(lblDaftarBlok)
+                        .addGap(0, 0, Short.MAX_VALUE)))
+                .addContainerGap())
+        );
+        pnlTabBlokLayout.setVerticalGroup(
+            pnlTabBlokLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(pnlTabBlokLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(lblDaftarBlok)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(scrollBlok, javax.swing.GroupLayout.DEFAULT_SIZE, 510, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+
+        tabMain.addTab("Lihat Blok Lahan", pnlTabBlok);
+
         splitRekap.setDividerLocation(380);
         splitRekap.setDividerSize(6);
 
@@ -468,54 +516,6 @@ public class DireksiFrame extends javax.swing.JFrame {
             .addComponent(splitRekap)
         );
 
-        lblDaftarBlok.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        lblDaftarBlok.setText("Daftar Blok Lahan Perkebunan:");
-
-        tblBlokLahan.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
-        tblBlokLahan.setModel(new javax.swing.table.DefaultTableModel(
-            new Object [][] {
-
-            },
-            new String [] {
-                "Kode Blok", "Nama Blok / Lahan", "Luas Lahan (Ha)", "Komoditas"
-            }
-        ) {
-            boolean[] canEdit = new boolean [] {
-                false, false, false, false
-            };
-
-            public boolean isCellEditable(int rowIndex, int columnIndex) {
-                return canEdit [columnIndex];
-            }
-        });
-        tblBlokLahan.setRowHeight(26);
-        scrollBlok.setViewportView(tblBlokLahan);
-
-        javax.swing.GroupLayout pnlTabBlokLayout = new javax.swing.GroupLayout(pnlTabBlok);
-        pnlTabBlok.setLayout(pnlTabBlokLayout);
-        pnlTabBlokLayout.setHorizontalGroup(
-            pnlTabBlokLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(pnlTabBlokLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(pnlTabBlokLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(scrollBlok, javax.swing.GroupLayout.DEFAULT_SIZE, 1150, Short.MAX_VALUE)
-                    .addGroup(pnlTabBlokLayout.createSequentialGroup()
-                        .addComponent(lblDaftarBlok)
-                        .addGap(0, 0, Short.MAX_VALUE)))
-                .addContainerGap())
-        );
-        pnlTabBlokLayout.setVerticalGroup(
-            pnlTabBlokLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(pnlTabBlokLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(lblDaftarBlok)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(scrollBlok, javax.swing.GroupLayout.DEFAULT_SIZE, 510, Short.MAX_VALUE)
-                .addContainerGap())
-        );
-
-        tabMain.addTab("Lihat Blok Lahan", pnlTabBlok);
-
         tabMain.addTab("Rekapitulasi", pnlTabRekap);
 
         splitEval.setDividerLocation(340);
@@ -627,7 +627,6 @@ public class DireksiFrame extends javax.swing.JFrame {
         txtCatatanPegawaiView.setEditable(false);
         txtCatatanPegawaiView.setBackground(new java.awt.Color(241, 245, 249));
         txtCatatanPegawaiView.setColumns(20);
-        txtCatatanPegawaiView.setFont(new java.awt.Font("Segoe UI", 0, 12)); // NOI18N
         txtCatatanPegawaiView.setLineWrap(true);
         txtCatatanPegawaiView.setRows(2);
         txtCatatanPegawaiView.setWrapStyleWord(true);
@@ -751,7 +750,7 @@ public class DireksiFrame extends javax.swing.JFrame {
                     .addComponent(btnPerbaruiEval, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnHapusEval, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(btnResetEval, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(40, Short.MAX_VALUE))
+                .addContainerGap(50, Short.MAX_VALUE))
         );
 
         splitEval.setLeftComponent(pnlFormEval);
@@ -1007,7 +1006,7 @@ public class DireksiFrame extends javax.swing.JFrame {
 
         String status = cmbStatusEval.getSelectedItem() != null ? cmbStatusEval.getSelectedItem().toString() : "Proses";
         if (status.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Status evaluasi wajib dipilih (Proses atau Selesai)!", "Validasi Gagal", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Status evaluasi wajib dipilih (Proses, Selesai, atau Pending)!", "Validasi Gagal", JOptionPane.WARNING_MESSAGE);
             return;
         }
         String cTindakLanjut = txtCatatanTindakLanjut.getText().trim();
@@ -1045,7 +1044,7 @@ public class DireksiFrame extends javax.swing.JFrame {
         double[] metrics = DataStore.getInstance().calculateMetrics(tglAwal, tglAkhir);
         String status = cmbStatusEval.getSelectedItem() != null ? cmbStatusEval.getSelectedItem().toString() : "Proses";
         if (status.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Status evaluasi wajib dipilih (Proses atau Selesai)!", "Validasi Gagal", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Status evaluasi wajib dipilih (Proses, Selesai, atau Pending)!", "Validasi Gagal", JOptionPane.WARNING_MESSAGE);
             return;
         }
         String cTindakLanjut = txtCatatanTindakLanjut.getText().trim();
@@ -1102,7 +1101,8 @@ public class DireksiFrame extends javax.swing.JFrame {
             txtEvalAkhir.setText(ev.getTglAkhir());
             lblTotalBulan.setText("<html>" + df.format(ev.getTotalPanen()) + " Kg<br><span style=\'font-size:10px;font-weight:normal;color:#64748b;\'>Rata-rata: " + df.format(ev.getRataRataPerBulan()) + " Kg/bln</span></html>");
             lblPersenTidakLayak.setText(df.format(ev.getPersenTidakLayak()) + "%");
-            cmbStatusEval.setSelectedItem("Selesai".equalsIgnoreCase(ev.getStatus()) ? "Selesai" : "Proses");
+            String statusVal = DataStore.normalizeStatus(ev.getStatus());
+            cmbStatusEval.setSelectedItem(statusVal);
             txtCatatanTindakLanjut.setText(ev.getCatatanTindakLanjut());
             if (txtCatatanEvaluasi != null) {
                 txtCatatanEvaluasi.setText(ev.getCatatanEvaluasi() == null || "-".equals(ev.getCatatanEvaluasi()) ? "" : ev.getCatatanEvaluasi());

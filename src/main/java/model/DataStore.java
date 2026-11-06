@@ -151,14 +151,15 @@ public class DataStore {
             ResultSet rsPanen = st.executeQuery(
                 "SELECT ap.id_panen, ap.tanggal_panen, ap.total_jumlah_panen, ap.hasil_panen_tidak_layak, ap.kualitas_panen, " +
                 "       ap.kode_blok_lahan, bl.nama_blok_lahan, bl.komoditas, " +
-                "       pp.nama_produk, pp.tahun_tanam, " +
-                "       " + colSawit1 + " AS tandan_val, " + colSawit2 + " AS brondolan_val, " +
-                "       kr.kadar_air_karet, kr.berat_kotor_karet " +
+                "       MAX(pp.nama_produk) AS nama_produk, MAX(pp.tahun_tanam) AS tahun_tanam, " +
+                "       MAX(" + colSawit1 + ") AS tandan_val, MAX(" + colSawit2 + ") AS brondolan_val, " +
+                "       MAX(kr.kadar_air_karet) AS kadar_air_karet, MAX(kr.berat_kotor_karet) AS berat_kotor_karet " +
                 "FROM aktivitas_panen ap " +
                 "LEFT JOIN blok_lahan bl ON ap.kode_blok_lahan = bl.kode_blok_lahan " +
                 "LEFT JOIN produk_panen pp ON pp.aktivitas_panen_id_panen = ap.id_panen " +
                 "LEFT JOIN sawit sw ON sw.id_produk = pp.id_produk " +
-                "LEFT JOIN karet kr ON kr.id_produk = pp.id_produk"
+                "LEFT JOIN karet kr ON kr.id_produk = pp.id_produk " +
+                "GROUP BY ap.id_panen, ap.tanggal_panen, ap.total_jumlah_panen, ap.hasil_panen_tidak_layak, ap.kualitas_panen, ap.kode_blok_lahan, bl.nama_blok_lahan, bl.komoditas"
             );
             while (rsPanen.next()) {
                 String idP = rsPanen.getString("id_panen");
@@ -204,7 +205,7 @@ public class DataStore {
                 String cTindakLanjut = rsEval.getString("catatan_tindak_lanjut");
                 String cEvaluasi = rsEval.getString("catatan_evaluasi");
                 String cPetugas = hasPetugasCol ? rsEval.getString("catatan_petugas") : "-";
-                double[] metrics = calculateMetrics(tglAwal, tglAkhir);
+                double[] metrics = calculateMetrics(tglAwal, tglAkhir, tempPanen);
                 tempEvaluasi.add(new Evaluasi(idEv, tglAwal, tglAkhir, metrics[0], metrics[1], status, cTindakLanjut, cEvaluasi, cPetugas));
                 try {
                     int num = Integer.parseInt(idEv.replaceAll("\\D+", ""));
@@ -344,35 +345,97 @@ public class DataStore {
     }
 
     public synchronized boolean deleteBlok(String kode) throws Exception {
+        return deleteBlok(kode, false);
+    }
+
+    public synchronized boolean deleteBlok(String kode, boolean cascade) throws Exception {
         if (kode == null || kode.trim().isEmpty()) {
             throw new IllegalArgumentException("Kode blok lahan tidak valid.");
         }
         String cleanKode = kode.trim();
+
+        // Cari panen yang tersangkut di blok ini
+        List<String> affectedPanenIds = new ArrayList<>();
         for (Panen p : panenList) {
             if (cleanKode.equalsIgnoreCase(p.getKodeBlok()) || 
                 (p.getBlokLahan() != null && p.getBlokLahan().toUpperCase().startsWith(cleanKode.toUpperCase()))) {
-                throw new IllegalStateException("Blok lahan '" + cleanKode + "' tidak dapat dihapus karena masih tersangkut pada data aktivitas panen (terdapat data panen " + p.getIdPanen() + " di blok ini). Harap hapus atau pindahkan data panen terkait terlebih dahulu.");
+                affectedPanenIds.add(p.getIdPanen());
             }
         }
+
         Connection c = Koneksi.getKoneksi();
         if (c != null) {
-            try (PreparedStatement checkPs = c.prepareStatement("SELECT id_panen FROM aktivitas_panen WHERE kode_blok_lahan = ? LIMIT 1")) {
+            try (PreparedStatement checkPs = c.prepareStatement("SELECT id_panen FROM aktivitas_panen WHERE kode_blok_lahan = ?")) {
                 checkPs.setString(1, cleanKode);
                 try (ResultSet rs = checkPs.executeQuery()) {
-                    if (rs.next()) {
-                        throw new IllegalStateException("Blok lahan '" + cleanKode + "' tidak dapat dihapus karena masih tersangkut pada data aktivitas panen di database (ID Panen: " + rs.getString("id_panen") + "). Harap hapus data panen terkait terlebih dahulu.");
+                    while (rs.next()) {
+                        String id = rs.getString("id_panen");
+                        if (!affectedPanenIds.contains(id)) affectedPanenIds.add(id);
                     }
                 }
             }
-            try (PreparedStatement ps = c.prepareStatement("DELETE FROM blok_lahan WHERE kode_blok_lahan = ?")) {
-                ps.setString(1, cleanKode);
-                ps.executeUpdate();
-            } catch (SQLException sqle) {
-                if (sqle.getErrorCode() == 1451 || (sqle.getMessage() != null && sqle.getMessage().toLowerCase().contains("foreign key"))) {
-                    throw new IllegalStateException("Blok lahan '" + cleanKode + "' tidak dapat dihapus karena masih tersangkut pada relasi data lain di database.");
-                }
-                throw sqle;
+
+            if (!affectedPanenIds.isEmpty() && !cascade) {
+                throw new IllegalStateException("Blok lahan '" + cleanKode + "' tidak dapat dihapus karena masih tersangkut pada " + affectedPanenIds.size() + " data aktivitas panen. Gunakan opsi hapus cascade jika ingin menghapus seluruhnya.");
             }
+
+            boolean oldAuto = c.getAutoCommit();
+            try {
+                c.setAutoCommit(false);
+                // Jika cascade diizinkan, hapus semua transaksi panen di blok ini
+                for (String idP : affectedPanenIds) {
+                    String idProduk = produkId(idP);
+                    try (PreparedStatement ps = c.prepareStatement("DELETE FROM sawit WHERE id_produk = ?")) {
+                        ps.setString(1, idProduk);
+                        ps.executeUpdate();
+                    }
+                    try (PreparedStatement ps = c.prepareStatement("DELETE FROM karet WHERE id_produk = ?")) {
+                        ps.setString(1, idProduk);
+                        ps.executeUpdate();
+                    }
+                    try (PreparedStatement ps = c.prepareStatement("DELETE FROM produk_panen WHERE aktivitas_panen_id_panen = ? OR id_produk = ?")) {
+                        ps.setString(1, idP);
+                        ps.setString(2, idProduk);
+                        ps.executeUpdate();
+                    }
+                    try (PreparedStatement ps = c.prepareStatement("UPDATE evaluasi_panen SET aktivitas_panen_id_panen = NULL WHERE aktivitas_panen_id_panen = ?")) {
+                        ps.setString(1, idP);
+                        ps.executeUpdate();
+                    }
+                    try (PreparedStatement ps = c.prepareStatement("UPDATE aktivitas_panen SET id_evaluasi = NULL WHERE id_panen = ?")) {
+                        ps.setString(1, idP);
+                        ps.executeUpdate();
+                    }
+                    try (PreparedStatement ps = c.prepareStatement("DELETE FROM riwayat_perubahan WHERE id_panen = ?")) {
+                        ps.setString(1, idP);
+                        ps.executeUpdate();
+                    }
+                    try (PreparedStatement ps = c.prepareStatement("DELETE FROM aktivitas_panen WHERE id_panen = ?")) {
+                        ps.setString(1, idP);
+                        ps.executeUpdate();
+                    }
+                }
+
+                try (PreparedStatement ps = c.prepareStatement("DELETE FROM blok_lahan WHERE kode_blok_lahan = ?")) {
+                    ps.setString(1, cleanKode);
+                    ps.executeUpdate();
+                }
+                c.commit();
+            } catch (Exception ex) {
+                c.rollback();
+                throw ex;
+            } finally {
+                c.setAutoCommit(oldAuto);
+            }
+        } else {
+            if (!affectedPanenIds.isEmpty() && !cascade) {
+                throw new IllegalStateException("Blok lahan '" + cleanKode + "' tidak dapat dihapus karena masih tersangkut pada data panen.");
+            }
+        }
+
+        if (cascade) {
+            panenList.removeIf(p -> cleanKode.equalsIgnoreCase(p.getKodeBlok()) || 
+                (p.getBlokLahan() != null && p.getBlokLahan().toUpperCase().startsWith(cleanKode.toUpperCase())));
         }
         return blokList.removeIf(b -> b.getKodeBlok().equalsIgnoreCase(cleanKode));
     }
@@ -476,6 +539,10 @@ public class DataStore {
     }
 
     public synchronized boolean deletePegawai(String idOrUser) throws Exception {
+        return deletePegawai(idOrUser, false);
+    }
+
+    public synchronized boolean deletePegawai(String idOrUser, boolean cascade) throws Exception {
         if (idOrUser == null || idOrUser.trim().isEmpty()) {
             throw new IllegalArgumentException("ID atau username pegawai tidak valid.");
         }
@@ -496,25 +563,62 @@ public class DataStore {
         }
         Connection c = Koneksi.getKoneksi();
         if (c != null) {
-            try (PreparedStatement checkPs = c.prepareStatement("SELECT id_panen FROM aktivitas_panen WHERE id_user = ? LIMIT 1")) {
+            List<String> affectedPanenIds = new ArrayList<>();
+            try (PreparedStatement checkPs = c.prepareStatement("SELECT id_panen FROM aktivitas_panen WHERE id_user = ?")) {
                 checkPs.setString(1, resolvedId);
                 try (ResultSet rs = checkPs.executeQuery()) {
-                    if (rs.next()) {
-                        throw new IllegalStateException("Pegawai '" + cleanIdOrUser + "' tidak dapat dihapus karena masih tersangkut pada data pencatatan aktivitas panen (ID Panen: " + rs.getString("id_panen") + ").");
-                    }
+                    while (rs.next()) affectedPanenIds.add(rs.getString("id_panen"));
                 }
             }
-            try (PreparedStatement checkBlok = c.prepareStatement("SELECT kode_blok_lahan FROM blok_lahan WHERE id_user = ? LIMIT 1")) {
-                checkBlok.setString(1, resolvedId);
-                try (ResultSet rs = checkBlok.executeQuery()) {
-                    if (rs.next()) {
-                        throw new IllegalStateException("Pegawai '" + cleanIdOrUser + "' tidak dapat dihapus karena masih tersangkut sebagai pengelola blok lahan (" + rs.getString("kode_blok_lahan") + ").");
-                    }
-                }
+
+            if (!affectedPanenIds.isEmpty() && !cascade) {
+                throw new IllegalStateException("Pegawai '" + cleanIdOrUser + "' tidak dapat dihapus karena masih tersangkut pada " + affectedPanenIds.size() + " data aktivitas panen.");
             }
+
             boolean oldAuto = c.getAutoCommit();
             try {
                 c.setAutoCommit(false);
+                // Lepaskan referensi pengelola di blok_lahan jika ada
+                try (PreparedStatement nullBlok = c.prepareStatement("UPDATE blok_lahan SET id_user = NULL WHERE id_user = ?")) {
+                    nullBlok.setString(1, resolvedId);
+                    nullBlok.executeUpdate();
+                }
+
+                if (cascade) {
+                    for (String idP : affectedPanenIds) {
+                        String idProduk = produkId(idP);
+                        try (PreparedStatement ps = c.prepareStatement("DELETE FROM sawit WHERE id_produk = ?")) {
+                            ps.setString(1, idProduk);
+                            ps.executeUpdate();
+                        }
+                        try (PreparedStatement ps = c.prepareStatement("DELETE FROM karet WHERE id_produk = ?")) {
+                            ps.setString(1, idProduk);
+                            ps.executeUpdate();
+                        }
+                        try (PreparedStatement ps = c.prepareStatement("DELETE FROM produk_panen WHERE aktivitas_panen_id_panen = ? OR id_produk = ?")) {
+                            ps.setString(1, idP);
+                            ps.setString(2, idProduk);
+                            ps.executeUpdate();
+                        }
+                        try (PreparedStatement ps = c.prepareStatement("UPDATE evaluasi_panen SET aktivitas_panen_id_panen = NULL WHERE aktivitas_panen_id_panen = ?")) {
+                            ps.setString(1, idP);
+                            ps.executeUpdate();
+                        }
+                        try (PreparedStatement ps = c.prepareStatement("UPDATE aktivitas_panen SET id_evaluasi = NULL WHERE id_panen = ?")) {
+                            ps.setString(1, idP);
+                            ps.executeUpdate();
+                        }
+                        try (PreparedStatement ps = c.prepareStatement("DELETE FROM riwayat_perubahan WHERE id_panen = ?")) {
+                            ps.setString(1, idP);
+                            ps.executeUpdate();
+                        }
+                        try (PreparedStatement ps = c.prepareStatement("DELETE FROM aktivitas_panen WHERE id_panen = ?")) {
+                            ps.setString(1, idP);
+                            ps.executeUpdate();
+                        }
+                    }
+                }
+
                 for (String t : new String[]{"admin", "direksi", "petugas"}) {
                     try (PreparedStatement ps = c.prepareStatement("DELETE FROM " + t + " WHERE id_user = ?")) {
                         ps.setString(1, resolvedId);
@@ -1030,6 +1134,22 @@ public class DataStore {
         } catch (Exception ex) {
             return 1;
         }
+    }
+
+    // Overload used during loadFromDatabase when panenList is not yet committed
+    private double[] calculateMetrics(String startDate, String endDate, List<Panen> source) {
+        double totalKg = 0;
+        double totalReject = 0;
+        for (Panen p : source) {
+            boolean inRange = true;
+            if (startDate != null && !startDate.trim().isEmpty() && p.getTanggal().compareTo(startDate.trim()) < 0) inRange = false;
+            if (endDate != null && !endDate.trim().isEmpty() && p.getTanggal().compareTo(endDate.trim()) > 0) inRange = false;
+            if (inRange) { totalKg += p.getTotalPanen(); totalReject += p.getTidakLayak(); }
+        }
+        double rejectPercent = totalKg > 0 ? (totalReject / totalKg) * 100.0 : 0.0;
+        int months = countCalendarMonths(startDate, endDate);
+        double avgPerMonth = months > 0 ? totalKg / months : totalKg;
+        return new double[]{ totalKg, rejectPercent, avgPerMonth };
     }
 
     public synchronized double[] calculateMetrics(String startDate, String endDate) {
