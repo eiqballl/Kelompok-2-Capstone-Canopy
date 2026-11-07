@@ -9,7 +9,17 @@ public class LoginFrame extends javax.swing.JFrame {
     public LoginFrame() {
         initComponents();
         applyCover();
+        util.UiStyles.polish(getContentPane());
+        lblHint.setFont(lblHint.getFont().deriveFont(12f));
+        lblHint.setForeground(DataStore.getInstance().isOfflineMode() ? util.UiStyles.WARNING_TEXT : util.UiStyles.MUTED);
+        if (!DataStore.getInstance().isOfflineMode()) {
+            lblHint.setToolTipText("Akun demo: ahmad.admin, andi.petugas, atau budi.direksi.");
+        }
+        lblUsername.setLabelFor(txtUsername);
+        lblPassword.setLabelFor(txtPassword);
+        getRootPane().setDefaultButton(btnLogin);
         setSize(900, 620);
+        util.UiStyles.fitToScreen(this);
         setLocationRelativeTo(null);
     }
 
@@ -34,8 +44,8 @@ public class LoginFrame extends javax.swing.JFrame {
         content.repaint();
 
         if (model.DataStore.getInstance().isOfflineMode()) {
-            lblHint.setText("MODE OFFLINE (data contoh, tidak tersimpan ke database)");
-            lblHint.setForeground(new java.awt.Color(220, 38, 38));
+            lblHint.setText("Mode offline | Data contoh, tidak tersimpan");
+            lblHint.setToolTipText("Perubahan pada data contoh tidak tersimpan ke database.");
         }
     }
 

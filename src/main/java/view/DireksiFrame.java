@@ -11,6 +11,7 @@ import model.BlokLahan;
 import model.DataStore;
 import model.Evaluasi;
 import model.Panen;
+import model.Pegawai;
 
 public class DireksiFrame extends javax.swing.JFrame {
     private final java.util.Set<String> selectedBlokFilter = new java.util.HashSet<>();
@@ -28,8 +29,34 @@ public class DireksiFrame extends javax.swing.JFrame {
         }
         initCustomData();
         refreshBlokTable();
+        refreshPegawaiTable();
         refreshRekapTable();
         refreshEvalTable();
+        polishView();
+    }
+
+    private void polishView() {
+        util.UiStyles.polishDashboard(this);
+        util.UiStyles.secondary(btnLogout);
+        util.UiStyles.secondary(btnHitungMetrik);
+        lblTotalRekap.setFont(util.UiStyles.BODY);
+        lblTotalRekap.setForeground(util.UiStyles.TEXT);
+        lblDaftarBlok.setLabelFor(tblBlokLahan);
+        lblDaftarPegawai.setLabelFor(tblPegawai);
+        lblDaftarRekap.setLabelFor(tblRekap);
+        lblDaftarEval.setLabelFor(tblEvaluasi);
+        lblModeRekap.setLabelFor(cmbModeRekap);
+        lblFilterKomoditas.setLabelFor(cmbFilterKomoditas);
+        lblFilterBlok.setLabelFor(cmbFilterBlok);
+        lblTglAwal.setLabelFor(txtTglAwal);
+        lblTglAkhir.setLabelFor(txtTglAkhir);
+        lblEvalAwal.setLabelFor(txtEvalAwal);
+        lblEvalAkhir.setLabelFor(txtEvalAkhir);
+        lblStatusEval.setLabelFor(cmbStatusEval);
+        lblCatatan.setLabelFor(txtCatatanTindakLanjut);
+        lblCatatanEvaluasi.setLabelFor(txtCatatanEvaluasi);
+        lblCatatanPegawaiView.setLabelFor(txtCatatanPegawaiView);
+        if (DataStore.getInstance().isOfflineMode()) util.UiStyles.offlineHeader(lblUserInfo);
     }
 
     private void applyBranding() {
@@ -56,6 +83,7 @@ public class DireksiFrame extends javax.swing.JFrame {
         cmbModeRekap.addActionListener(e -> handleModeRekapChange());
 
         tblBlokLahan.setAutoCreateRowSorter(true);
+        tblPegawai.setAutoCreateRowSorter(true);
         tblRekap.setAutoCreateRowSorter(true);
         tblEvaluasi.setAutoCreateRowSorter(true);
         cmbStatusEval.setModel(new javax.swing.DefaultComboBoxModel<>(new String[]{"Proses", "Selesai", "Pending"}));
@@ -78,12 +106,14 @@ public class DireksiFrame extends javax.swing.JFrame {
                 int idx = tabMain.getSelectedIndex();
                 switch (idx) {
                     case 0: refreshBlokTable(); break;
-                    case 1: refreshRekapTable(); break;
-                    case 2: refreshEvalTable(); break;
+                    case 1: refreshPegawaiTable(); break;
+                    case 2: refreshRekapTable(); break;
+                    case 3: refreshEvalTable(); break;
                 }
             }
         });
         refreshBlokTable();
+        refreshPegawaiTable();
         refreshEvalTable();
         LocalDate today = LocalDate.now();
         String start = today.withDayOfMonth(1).toString();
@@ -103,6 +133,21 @@ public class DireksiFrame extends javax.swing.JFrame {
                 b.getNamaLahan(),
                 df.format(b.getLuasLahan()),
                 b.getKomoditas()
+            });
+        }
+    }
+
+    public void refreshPegawaiTable() {
+        if (tblPegawai == null) return;
+        DefaultTableModel model = (DefaultTableModel) tblPegawai.getModel();
+        model.setRowCount(0);
+        for (Pegawai p : DataStore.getInstance().getPegawaiList()) {
+            model.addRow(new Object[]{
+                p.getIdPegawai(),
+                p.getNamaPegawai(),
+                p.getUsername(),
+                p.getNoTelp(),
+                p.getRole()
             });
         }
     }
@@ -170,6 +215,10 @@ public class DireksiFrame extends javax.swing.JFrame {
         lblDaftarBlok = new javax.swing.JLabel();
         scrollBlok = new javax.swing.JScrollPane();
         tblBlokLahan = new javax.swing.JTable();
+        pnlTabPegawai = new javax.swing.JPanel();
+        lblDaftarPegawai = new javax.swing.JLabel();
+        scrollPegawai = new javax.swing.JScrollPane();
+        tblPegawai = new javax.swing.JTable();
         pnlTabRekap = new javax.swing.JPanel();
         splitRekap = new javax.swing.JSplitPane();
         pnlFilterRekap = new javax.swing.JPanel();
@@ -326,6 +375,54 @@ public class DireksiFrame extends javax.swing.JFrame {
         );
 
         tabMain.addTab("Lihat Blok Lahan", pnlTabBlok);
+
+        lblDaftarPegawai.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        lblDaftarPegawai.setText("Daftar Pegawai / Pengguna:");
+
+        tblPegawai.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
+        tblPegawai.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+
+            },
+            new String [] {
+                "ID Pegawai", "Nama Pegawai", "Username", "No. Telepon", "Role"
+            }
+        ) {
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false, false
+            };
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        tblPegawai.setRowHeight(26);
+        scrollPegawai.setViewportView(tblPegawai);
+
+        javax.swing.GroupLayout pnlTabPegawaiLayout = new javax.swing.GroupLayout(pnlTabPegawai);
+        pnlTabPegawai.setLayout(pnlTabPegawaiLayout);
+        pnlTabPegawaiLayout.setHorizontalGroup(
+            pnlTabPegawaiLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(pnlTabPegawaiLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(pnlTabPegawaiLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(scrollPegawai, javax.swing.GroupLayout.DEFAULT_SIZE, 1150, Short.MAX_VALUE)
+                    .addGroup(pnlTabPegawaiLayout.createSequentialGroup()
+                        .addComponent(lblDaftarPegawai)
+                        .addGap(0, 0, Short.MAX_VALUE)))
+                .addContainerGap())
+        );
+        pnlTabPegawaiLayout.setVerticalGroup(
+            pnlTabPegawaiLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(pnlTabPegawaiLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(lblDaftarPegawai)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(scrollPegawai, javax.swing.GroupLayout.DEFAULT_SIZE, 510, Short.MAX_VALUE)
+                .addContainerGap())
+        );
+
+        tabMain.addTab("Lihat Pegawai", pnlTabPegawai);
 
         splitRekap.setDividerLocation(380);
         splitRekap.setDividerSize(6);
@@ -944,7 +1041,8 @@ public class DireksiFrame extends javax.swing.JFrame {
         }
 
         double persenReject = grandTotal > 0 ? (totalTidakLayak / grandTotal) * 100.0 : 0.0;
-        lblTotalRekap.setText("<html><b>Ringkasan:</b> " + count + " Transaksi &nbsp;|&nbsp; <b>Total Panen:</b> " + df.format(grandTotal) + " Kg &nbsp;|&nbsp; <b>Tidak Layak:</b> <font color='#dc2626'>" + df.format(totalTidakLayak) + " Kg (" + df.format(persenReject) + "%)</font> &nbsp;|&nbsp; <b>Mutu:</b> <font color='#16a34a'>" + baik + " Baik</font>, <font color='#d97706'>" + cukup + " Cukup</font>, <font color='#dc2626'>" + kurang + " Kurang</font></html>");
+        lblTotalRekap.setText(util.UiStyles.recapSummary(count, df.format(grandTotal),
+                df.format(totalTidakLayak), df.format(persenReject), baik, cukup, kurang));
 
         if (count == 0 && evt != null) {
             JOptionPane.showMessageDialog(this,
@@ -1132,6 +1230,7 @@ public class DireksiFrame extends javax.swing.JFrame {
     private javax.swing.JLabel lblCatatanPegawaiView;
     private javax.swing.JLabel lblDaftarBlok;
     private javax.swing.JLabel lblDaftarEval;
+    private javax.swing.JLabel lblDaftarPegawai;
     private javax.swing.JLabel lblDaftarRekap;
     private javax.swing.JLabel lblEvalAkhir;
     private javax.swing.JLabel lblEvalAwal;
@@ -1155,6 +1254,7 @@ public class DireksiFrame extends javax.swing.JFrame {
     private javax.swing.JPanel pnlMetrikCard;
     private javax.swing.JPanel pnlTabBlok;
     private javax.swing.JPanel pnlTabEval;
+    private javax.swing.JPanel pnlTabPegawai;
     private javax.swing.JPanel pnlTabRekap;
     private javax.swing.JPanel pnlTabelEval;
     private javax.swing.JPanel pnlTabelRekap;
@@ -1163,12 +1263,14 @@ public class DireksiFrame extends javax.swing.JFrame {
     private javax.swing.JScrollPane scrollCatatanEvaluasi;
     private javax.swing.JScrollPane scrollCatatanPegawaiView;
     private javax.swing.JScrollPane scrollEval;
+    private javax.swing.JScrollPane scrollPegawai;
     private javax.swing.JScrollPane scrollRekap;
     private javax.swing.JSplitPane splitEval;
     private javax.swing.JSplitPane splitRekap;
     private javax.swing.JTabbedPane tabMain;
     private javax.swing.JTable tblBlokLahan;
     private javax.swing.JTable tblEvaluasi;
+    private javax.swing.JTable tblPegawai;
     private javax.swing.JTable tblRekap;
     private javax.swing.JTextArea txtCatatanEvaluasi;
     private javax.swing.JTextArea txtCatatanPegawaiView;

@@ -33,6 +33,47 @@ public class AdminFrame extends javax.swing.JFrame {
         refreshBlokTable();
         refreshPegawaiTable();
         resetBlokForm();
+        polishView();
+    }
+
+    private void polishView() {
+        util.UiStyles.polishDashboard(this);
+        util.UiStyles.secondary(btnLogout);
+        util.UiStyles.secondary(btnHitungMetrik);
+        lblTotalRekap.setFont(util.UiStyles.BODY);
+        lblTotalRekap.setForeground(util.UiStyles.TEXT);
+        lblDaftarBlok.setLabelFor(tblBlokLahan);
+        lblDaftarPegawai.setLabelFor(tblPegawai);
+        lblDaftarPanen.setLabelFor(tblPanen);
+        lblDaftarRekap.setLabelFor(tblRekap);
+        lblDaftarEval.setLabelFor(tblEvaluasi);
+        lblNamaLahan.setLabelFor(txtNamaLahan);
+        lblLuasLahan.setLabelFor(txtLuasLahan);
+        lblKomoditasBlok.setLabelFor(cmbKomoditasBlok);
+        lblNamaPegawai.setLabelFor(txtNamaPegawai);
+        lblUsernamePgw.setLabelFor(txtUsernamePgw);
+        lblPasswordPgw.setLabelFor(txtPasswordPgw);
+        lblNoTelp.setLabelFor(txtNoTelp);
+        lblRole.setLabelFor(cmbRole);
+        lblDetailRole.setLabelFor(txtDetailRole);
+        lblBlok.setLabelFor(cmbBlokLahan);
+        lblInput1.setLabelFor(txtInput1);
+        lblInput2.setLabelFor(txtInput2);
+        lblTidakLayak.setLabelFor(txtTidakLayak);
+        lblTahunTanamPanen.setLabelFor(txtTahunTanamPanen);
+        lblTanggal.setLabelFor(txtTanggalPanen);
+        lblModeRekap.setLabelFor(cmbModeRekap);
+        lblFilterKomoditas.setLabelFor(cmbFilterKomoditas);
+        lblFilterBlok.setLabelFor(cmbFilterBlok);
+        lblTglAwal.setLabelFor(txtTglAwal);
+        lblTglAkhir.setLabelFor(txtTglAkhir);
+        lblEvalAwal.setLabelFor(txtEvalAwal);
+        lblEvalAkhir.setLabelFor(txtEvalAkhir);
+        lblStatusEval.setLabelFor(cmbStatusEval);
+        lblCatatan.setLabelFor(txtCatatanTindakLanjut);
+        lblCatatanEvaluasi.setLabelFor(txtCatatanEvaluasi);
+        lblCatatanPegawaiView.setLabelFor(txtCatatanPegawaiView);
+        if (DataStore.getInstance().isOfflineMode()) util.UiStyles.offlineHeader(lblUserInfo);
     }
 
     private void applyBranding() {
@@ -2264,7 +2305,8 @@ public class AdminFrame extends javax.swing.JFrame {
         }
 
         double persenReject = grandTotal > 0 ? (totalTidakLayak / grandTotal) * 100.0 : 0.0;
-        lblTotalRekap.setText("<html><b>Ringkasan:</b> " + count + " Transaksi &nbsp;|&nbsp; <b>Total Panen:</b> " + df.format(grandTotal) + " Kg &nbsp;|&nbsp; <b>Tidak Layak:</b> <font color='#dc2626'>" + df.format(totalTidakLayak) + " Kg (" + df.format(persenReject) + "%)</font> &nbsp;|&nbsp; <b>Mutu:</b> <font color='#16a34a'>" + baik + " Baik</font>, <font color='#d97706'>" + cukup + " Cukup</font>, <font color='#dc2626'>" + kurang + " Kurang</font></html>");
+        lblTotalRekap.setText(util.UiStyles.recapSummary(count, df.format(grandTotal),
+                df.format(totalTidakLayak), df.format(persenReject), baik, cukup, kurang));
 
         if (count == 0 && evt != null) {
             JOptionPane.showMessageDialog(this,

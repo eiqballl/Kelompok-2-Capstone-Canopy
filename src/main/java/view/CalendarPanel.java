@@ -2,6 +2,7 @@ package view;
 
 import java.awt.Color;
 import java.awt.Cursor;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.Insets;
@@ -33,6 +34,7 @@ public class CalendarPanel extends javax.swing.JPanel {
 
     private final JButton[] dayButtons = new JButton[42];
     private LocalDate selected;
+    private LocalDate focusedDate;
     private YearMonth viewMonth;
     private Consumer<LocalDate> onSelect;
     private Runnable onCancel;
@@ -42,6 +44,7 @@ public class CalendarPanel extends javax.swing.JPanel {
         LocalDate base = parse(initial);
         if (base == null) base = LocalDate.now();
         selected = base;
+        focusedDate = base;
         viewMonth = YearMonth.from(base);
         configure(base);
         buildDays();
@@ -62,7 +65,13 @@ public class CalendarPanel extends javax.swing.JPanel {
 
         for (JButton button : new JButton[]{btnPrev, btnNext, btnToday, btnCancel}) {
             button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            button.setFocusable(true);
         }
+        btnPrev.getAccessibleContext().setAccessibleName("Bulan sebelumnya");
+        btnNext.getAccessibleContext().setAccessibleName("Bulan berikutnya");
+        cmbMonth.getAccessibleContext().setAccessibleName("Bulan");
+        cmbYear.getAccessibleContext().setAccessibleName("Tahun");
+        util.UiStyles.polish(this);
 
         cmbMonth.setModel(new javax.swing.DefaultComboBoxModel<>(MONTHS));
         cmbMonth.setSelectedIndex(base.getMonthValue() - 1);
@@ -71,6 +80,8 @@ public class CalendarPanel extends javax.swing.JPanel {
         for (int year = currentYear - 20; year <= currentYear + 10; year++) {
             cmbYear.addItem(year);
         }
+        cmbYear.setPrototypeDisplayValue(currentYear + 10);
+        cmbYear.setPreferredSize(new Dimension(72, cmbYear.getPreferredSize().height));
         cmbYear.setSelectedItem(base.getYear());
 
         btnPrev.addActionListener(e -> moveMonth(-1));
@@ -145,18 +156,24 @@ public class CalendarPanel extends javax.swing.JPanel {
     }
 
     private void buildDays() {
+        if (!YearMonth.from(focusedDate).equals(viewMonth)) {
+            focusedDate = viewMonth.atDay(Math.min(focusedDate.getDayOfMonth(), viewMonth.lengthOfMonth()));
+        }
         pnlDays.removeAll();
         int offset = viewMonth.atDay(1).getDayOfWeek().getValue() - 1;
 
         for (int index = 0; index < dayButtons.length; index++) {
             if (dayButtons[index] == null) {
                 JButton button = new JButton();
-                button.setFocusable(false);
                 button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
                 button.setMargin(new Insets(2, 2, 2, 2));
                 button.addActionListener(e -> {
                     Object value = button.getClientProperty("tanggal");
                     if (value instanceof LocalDate) choose((LocalDate) value);
+                });
+                util.UiStyles.calendarNavigation(button, delta -> {
+                    LocalDate date = (LocalDate) button.getClientProperty("tanggal");
+                    if (date != null) focusDate(date.plusDays(delta));
                 });
                 dayButtons[index] = button;
             }
@@ -166,6 +183,8 @@ public class CalendarPanel extends javax.swing.JPanel {
             if (dayOfMonth < 1 || dayOfMonth > viewMonth.lengthOfMonth()) {
                 button.setText("");
                 button.setEnabled(false);
+                button.setFocusable(false);
+                button.putClientProperty("tanggal", null);
                 button.setBorder(BorderFactory.createEmptyBorder());
                 button.setContentAreaFilled(false);
                 pnlDays.add(button);
@@ -176,19 +195,39 @@ public class CalendarPanel extends javax.swing.JPanel {
             boolean isSelected = date.equals(selected);
             boolean isToday = date.equals(LocalDate.now());
             button.setEnabled(true);
+            button.setFocusable(date.equals(focusedDate));
             button.setContentAreaFilled(true);
             button.setOpaque(true);
             button.setText(String.valueOf(dayOfMonth));
             button.putClientProperty("tanggal", date);
+            String description = dayOfMonth + " " + MONTHS[viewMonth.getMonthValue() - 1] + " " + viewMonth.getYear();
+            button.getAccessibleContext().setAccessibleName(description + (isSelected ? ", dipilih" : ""));
+            button.setToolTipText(description + (isToday ? " (hari ini)" : ""));
             button.setFont(button.getFont().deriveFont(isSelected || isToday ? Font.BOLD : Font.PLAIN));
             button.setForeground(isSelected ? Color.WHITE : (isToday ? ACCENT : TEXT));
             button.setBackground(isSelected ? ACCENT : Color.WHITE);
             button.setBorder(BorderFactory.createLineBorder(isSelected ? ACCENT : GRID_LINE));
+            util.UiStyles.polishButton(button);
             pnlDays.add(button);
         }
 
         pnlDays.revalidate();
         pnlDays.repaint();
+    }
+
+    private void focusDate(LocalDate date) {
+        focusedDate = date;
+        if (!YearMonth.from(date).equals(viewMonth)) {
+            viewMonth = YearMonth.from(date);
+            cmbMonth.setSelectedIndex(viewMonth.getMonthValue() - 1);
+            cmbYear.setSelectedItem(viewMonth.getYear());
+            buildDays();
+        }
+        for (JButton button : dayButtons) {
+            boolean focused = date.equals(button.getClientProperty("tanggal"));
+            button.setFocusable(focused);
+            if (focused) button.requestFocusInWindow();
+        }
     }
 
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents

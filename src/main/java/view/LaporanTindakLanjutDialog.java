@@ -33,13 +33,16 @@ public class LaporanTindakLanjutDialog extends JDialog {
         super(parent, "Laporan Tindak Lanjut Evaluasi Lapangan", true);
         this.evaluasi = evaluasi;
         initUI();
+        util.UiStyles.polish(getContentPane());
+        util.UiStyles.closeOnEscape(this);
         pack();
+        util.UiStyles.fitToScreen(this);
         setLocationRelativeTo(parent);
     }
 
     private void initUI() {
         setLayout(new BorderLayout(12, 12));
-        setSize(520, 500);
+        setPreferredSize(new Dimension(520, 500));
         setMinimumSize(new Dimension(460, 440));
 
         // Header
@@ -54,7 +57,7 @@ public class LaporanTindakLanjutDialog extends JDialog {
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 15));
         lblTitle.setForeground(new Color(15, 23, 42));
 
-        JLabel lblSubtitle = new JLabel("Perbarui catatan eksekusi lapangan agar terpantau oleh Admin dan Direksi.");
+        JLabel lblSubtitle = new JLabel("<html><div style='width:270px;'>Perbarui catatan eksekusi lapangan agar terpantau oleh Admin dan Direksi.</div></html>");
         lblSubtitle.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         lblSubtitle.setForeground(new Color(100, 116, 139));
 
@@ -81,7 +84,7 @@ public class LaporanTindakLanjutDialog extends JDialog {
         ));
 
         String infoHtml = String.format(
-            "<html><div style='font-size: 12px; color: #334155; line-height: 1.5;'>"
+            "<html><div style='width:270px; font-size: 10px; color: #334155; line-height: 1.5;'>"
             + "<b>Periode Evaluasi:</b> %s s/d %s<br>"
             + "<b>Total Hasil Panen:</b> %s Kg &nbsp;|&nbsp; <b>Tidak Layak:</b> <font color='%s'>%s%%</font><br>"
             + "<b>Catatan Tindak Lanjut:</b> <i>%s</i><br>"
@@ -90,20 +93,23 @@ public class LaporanTindakLanjutDialog extends JDialog {
             + "</div></html>",
             evaluasi.getTglAwal(), evaluasi.getTglAkhir(),
             df.format(evaluasi.getTotalPanen()),
-            evaluasi.getPersenTidakLayak() > 5.0 ? "#dc2626" : "#16a34a",
+            util.UiStyles.hex(evaluasi.getPersenTidakLayak() > 5.0 ? util.UiStyles.DANGER : util.UiStyles.SUCCESS),
             df.format(evaluasi.getPersenTidakLayak()),
-            evaluasi.getCatatanTindakLanjut() == null || "-".equals(evaluasi.getCatatanTindakLanjut()) ? "(Belum ada arahan tindak lanjut)" : evaluasi.getCatatanTindakLanjut(),
-            evaluasi.getCatatanEvaluasi() == null || "-".equals(evaluasi.getCatatanEvaluasi()) ? "(Belum ada catatan evaluasi)" : evaluasi.getCatatanEvaluasi(),
-            evaluasi.getStatus()
+            evaluasi.getCatatanTindakLanjut() == null || "-".equals(evaluasi.getCatatanTindakLanjut()) ? "(Belum ada arahan tindak lanjut)" : util.UiStyles.escapeHtml(evaluasi.getCatatanTindakLanjut()),
+            evaluasi.getCatatanEvaluasi() == null || "-".equals(evaluasi.getCatatanEvaluasi()) ? "(Belum ada catatan evaluasi)" : util.UiStyles.escapeHtml(evaluasi.getCatatanEvaluasi()),
+            util.UiStyles.escapeHtml(evaluasi.getStatus())
         );
         JLabel lblInfo = new JLabel(infoHtml);
         pnlInfo.add(lblInfo, BorderLayout.CENTER);
+        pnlInfo.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        pnlInfo.setMaximumSize(new Dimension(Integer.MAX_VALUE, pnlInfo.getPreferredSize().height));
         pnlBody.add(pnlInfo);
         pnlBody.add(Box.createVerticalStrut(12));
 
         JLabel lblCatatan = new JLabel("Laporan Pelaksanaan Lapangan (Catatan Petugas):");
         lblCatatan.setFont(new Font("Segoe UI", Font.BOLD, 12));
         lblCatatan.setForeground(new Color(30, 41, 59));
+        lblCatatan.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
         pnlBody.add(lblCatatan);
         pnlBody.add(Box.createVerticalStrut(6));
 
@@ -112,18 +118,22 @@ public class LaporanTindakLanjutDialog extends JDialog {
         txtCatatanLapangan.setLineWrap(true);
         txtCatatanLapangan.setWrapStyleWord(true);
         txtCatatanLapangan.setText(evaluasi.getCatatanPetugas() == null || "-".equals(evaluasi.getCatatanPetugas()) ? "" : evaluasi.getCatatanPetugas());
+        lblCatatan.setLabelFor(txtCatatanLapangan);
 
         JScrollPane scrollCatatan = new JScrollPane(txtCatatanLapangan);
         scrollCatatan.setBorder(BorderFactory.createLineBorder(new Color(203, 213, 225), 1));
+        scrollCatatan.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
         pnlBody.add(scrollCatatan);
         pnlBody.add(Box.createVerticalStrut(10));
 
-        JLabel lblStatusInfo = new JLabel("<html><span style='color:#64748b; font-size:11px;'>* Status evaluasi tetap <b>" + evaluasi.getStatus() + "</b>. Status hanya dapat diubah oleh Admin/Direksi setelah verifikasi.</span></html>");
+        JLabel lblStatusInfo = new JLabel("<html><div style='width:270px; color:#64748b; font-size:9px;'>Status evaluasi tetap <b>" + util.UiStyles.escapeHtml(evaluasi.getStatus()) + "</b>. Status hanya dapat diubah oleh Admin/Direksi setelah verifikasi.</div></html>");
+        lblStatusInfo.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
         pnlBody.add(lblStatusInfo);
 
-        add(pnlBody, BorderLayout.CENTER);
+        add(util.UiStyles.scrollContent(pnlBody), BorderLayout.CENTER);
 
         JPanel pnlFooter = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 12));
+        pnlFooter.setBackground(Color.WHITE);
         pnlFooter.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(226, 232, 240)));
 
         JButton btnBatal = new JButton("Batal");
@@ -140,6 +150,7 @@ public class LaporanTindakLanjutDialog extends JDialog {
                 JOptionPane.showMessageDialog(this,
                     "<html><div style='width: 300px;'>Mohon isikan catatan tindak lanjut lapangan yang telah dilaksanakan.</div></html>",
                     "Peringatan", JOptionPane.WARNING_MESSAGE);
+                txtCatatanLapangan.requestFocusInWindow();
                 return;
             }
             evaluasi.setCatatanPetugas(catatan);
@@ -154,6 +165,7 @@ public class LaporanTindakLanjutDialog extends JDialog {
         pnlFooter.add(btnBatal);
         pnlFooter.add(btnKirim);
         add(pnlFooter, BorderLayout.SOUTH);
+        getRootPane().setDefaultButton(btnKirim);
     }
 
     public boolean isSaved() {

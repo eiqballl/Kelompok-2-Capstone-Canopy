@@ -35,13 +35,16 @@ public class PilihBlokDialog extends JDialog {
             this.selectedCodes.addAll(initialSelected);
         }
         initUI();
+        util.UiStyles.polish(getContentPane());
+        util.UiStyles.closeOnEscape(this);
         pack();
+        util.UiStyles.fitToScreen(this);
         setLocationRelativeTo(parent);
     }
 
     private void initUI() {
         setLayout(new BorderLayout(10, 10));
-        setSize(420, 480);
+        setPreferredSize(new Dimension(420, 480));
         setMinimumSize(new Dimension(380, 400));
 
         JPanel pnlHeader = new JPanel(new BorderLayout());
@@ -84,10 +87,17 @@ public class PilihBlokDialog extends JDialog {
             cb.setFont(new Font("Segoe UI", Font.PLAIN, 13));
             cb.setOpaque(false);
             cb.setActionCommand(bl.getKodeBlok());
+            cb.setToolTipText(labelText);
             cb.setSelected(selectAllByDefault || selectedCodes.contains(bl.getKodeBlok()));
             checkBoxes.add(cb);
             pnlList.add(cb);
             pnlList.add(Box.createVerticalStrut(8));
+        }
+        if (blokList.isEmpty()) {
+            JLabel empty = new JLabel("<html>Belum ada blok lahan.<br>Minta Admin menambahkan blok lahan.</html>");
+            empty.setFont(util.UiStyles.BODY);
+            empty.setForeground(util.UiStyles.MUTED);
+            pnlList.add(empty);
         }
 
         JScrollPane scrollPane = new JScrollPane(pnlList);
@@ -96,12 +106,14 @@ public class PilihBlokDialog extends JDialog {
         add(scrollPane, BorderLayout.CENTER);
 
         JPanel pnlBottom = new JPanel(new BorderLayout(8, 8));
+        pnlBottom.setBackground(Color.WHITE);
         pnlBottom.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(226, 232, 240)),
             BorderFactory.createEmptyBorder(10, 16, 10, 16)
         ));
 
         JPanel pnlQuick = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        pnlQuick.setOpaque(false);
         JButton btnPilihSemua = new JButton("Pilih Semua");
         btnPilihSemua.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         btnPilihSemua.addActionListener(e -> {
@@ -116,9 +128,10 @@ public class PilihBlokDialog extends JDialog {
 
         pnlQuick.add(btnPilihSemua);
         pnlQuick.add(btnHapusSemua);
-        pnlBottom.add(pnlQuick, BorderLayout.WEST);
+        pnlBottom.add(pnlQuick, BorderLayout.NORTH);
 
         JPanel pnlSubmit = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        pnlSubmit.setOpaque(false);
         JButton btnBatal = new JButton("Batal");
         btnBatal.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         btnBatal.addActionListener(e -> dispose());
@@ -140,7 +153,8 @@ public class PilihBlokDialog extends JDialog {
 
         pnlSubmit.add(btnBatal);
         pnlSubmit.add(btnTerapkan);
-        pnlBottom.add(pnlSubmit, BorderLayout.EAST);
+        pnlBottom.add(pnlSubmit, BorderLayout.SOUTH);
+        getRootPane().setDefaultButton(btnTerapkan);
 
         add(pnlBottom, BorderLayout.SOUTH);
     }

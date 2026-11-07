@@ -37,7 +37,7 @@ Pengembangan sistem ini sejalan dengan **SDG 9** (Industri, Inovasi, dan Infrast
 |---|:---:|:---:|:---:|
 | Login berbasis peran (role-based access) | ✅ | ✅ | ✅ |
 | Kelola blok lahan (CRUD) | ✅ | lihat | lihat |
-| Kelola data pegawai/pengguna (CRUD) | ✅ | ❌ | ❌ |
+| Kelola data pegawai/pengguna (CRUD) | ✅ | ❌ | lihat |
 | Kelola data panen sawit & karet (CRUD) | ✅ | ✅ | ❌ |
 | Rekapitulasi panen (filter komoditas, blok, periode) | ✅ | ✅ | ✅ |
 | Evaluasi panen (CRUD) | ✅ | Lihat & Tambah (Khusus Fitur Catatan Petugas) | ✅ |
@@ -47,7 +47,7 @@ Fitur pendukung:
 - **Hitung metrik** panen (total produksi dan persentase hasil tidak layak) serta penentuan kualitas otomatis (Baik/Cukup/Kurang).
 - **Kalkulasi otomatis**: total sawit (tandan + brondolan) dan berat bersih karet (berat kotor dikurangi kadar air).
 - **Filter multi-blok** (`PilihBlokDialog`) dan **date picker kalender**.
-- **Laporan tindak lanjut** dan **rangkuman eksekutif** untuk direksi.
+- **Laporan tindak lanjut** (`LaporanTindakLanjutDialog`) untuk evaluasi panen.
 - **Riwayat perubahan** data panen (data sebelum dan sesudah).
 - **Validasi input** (`InputValidator`) untuk angka, tanggal, dan string.
 

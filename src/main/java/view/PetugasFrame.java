@@ -28,6 +28,29 @@ public class PetugasFrame extends javax.swing.JFrame {
         }
         initCustomData();
         refreshEvalTable();
+        polishView();
+    }
+
+    private void polishView() {
+        util.UiStyles.polishDashboard(this);
+        util.UiStyles.secondary(btnLogout);
+        lblTotalRekap.setFont(util.UiStyles.BODY);
+        lblTotalRekap.setForeground(util.UiStyles.TEXT);
+        lblDaftarPanen.setLabelFor(tblPanen);
+        lblDaftarRekap.setLabelFor(tblRekap);
+        lblDaftarEval.setLabelFor(tblEvaluasi);
+        lblBlok.setLabelFor(cmbBlokLahan);
+        lblInput1.setLabelFor(txtInput1);
+        lblInput2.setLabelFor(txtInput2);
+        lblTidakLayak.setLabelFor(txtTidakLayak);
+        lblTahunTanamPanen.setLabelFor(txtTahunTanamPanen);
+        lblTanggal.setLabelFor(txtTanggalPanen);
+        lblModeRekap.setLabelFor(cmbModeRekap);
+        lblFilterKomoditas.setLabelFor(cmbFilterKomoditas);
+        lblFilterBlok.setLabelFor(cmbFilterBlok);
+        lblTglAwal.setLabelFor(txtTglAwal);
+        lblTglAkhir.setLabelFor(txtTglAkhir);
+        if (DataStore.getInstance().isOfflineMode()) util.UiStyles.offlineHeader(lblUserInfo);
     }
 
     private void applyBranding() {
@@ -1084,7 +1107,8 @@ public class PetugasFrame extends javax.swing.JFrame {
         }
 
         double persenReject = grandTotal > 0 ? (totalTidakLayak / grandTotal) * 100.0 : 0.0;
-        lblTotalRekap.setText("<html><b>Ringkasan:</b> " + count + " Transaksi &nbsp;|&nbsp; <b>Total Panen:</b> " + df.format(grandTotal) + " Kg &nbsp;|&nbsp; <b>Tidak Layak:</b> <font color='#dc2626'>" + df.format(totalTidakLayak) + " Kg (" + df.format(persenReject) + "%)</font> &nbsp;|&nbsp; <b>Mutu:</b> <font color='#16a34a'>" + baik + " Baik</font>, <font color='#d97706'>" + cukup + " Cukup</font>, <font color='#dc2626'>" + kurang + " Kurang</font></html>");
+        lblTotalRekap.setText(util.UiStyles.recapSummary(count, df.format(grandTotal),
+                df.format(totalTidakLayak), df.format(persenReject), baik, cukup, kurang));
 
         if (count == 0 && evt != null) {
             JOptionPane.showMessageDialog(this,
